@@ -6,11 +6,12 @@ About seven months ago I got my first computer ever — a month in, I was still 
 out how to copy and paste in a terminal. This is a running log of what I've built since,
 kept honest: the wins, the walls, and the stuff that's still parked.
 
-**Live:** https://stackzac22.github.io/ghostgrid
+**Live:** https://stackzac22.github.io
 
 ## What's inside
 - **The origin story** — first computer → Kali on bare metal → the ESP32 fleet → rooting phones for mobile security.
 - **Build log 01 — Ragnar:** a fully-local voice assistant (Whisper + a 7B model + Piper), zero cloud, told as "the walls I hit."
+- **Build log 02 — Cornhole Sentinel:** mmWave radar + camera auto-scoring, in progress.
 - **The grid** — every node and its honest status (live / building / parked).
 
 ## Stack I've been learning

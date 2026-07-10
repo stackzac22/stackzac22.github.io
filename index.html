@@ -249,6 +249,20 @@
     border:1px dashed var(--line);border-radius:6px;padding:4px 8px}
   @media (max-width:620px){.tl-item{grid-template-columns:1fr;gap:6px}}
 
+  /* ---- build 02 status + github live ---- */
+  .landed.building{background:var(--wip-bg);border-color:color-mix(in srgb,var(--wip) 34%,transparent)}
+  .landed.building .k{color:var(--wip)}
+  .gh-live{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:22px 24px;box-shadow:var(--shadow)}
+  .gh-live .hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px}
+  .gh-live .hd h3{font-family:var(--font-grotesque);font-weight:800;font-size:1.15rem}
+  .gh-live .hd a{font-family:var(--font-mono);font-size:.78rem;color:var(--accent-ink);text-decoration:none}
+  .gh-live .hd a:hover{text-decoration:underline}
+  .gh-cards{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center}
+  .gh-cards img{max-width:100%;height:auto;border-radius:8px}
+  .gh-chart{width:100%;overflow-x:auto;margin-top:16px}
+  .gh-chart img{width:100%;min-width:520px;display:block}
+
   /* ---- boot reveal ---- */
   .reveal{opacity:0;transform:translateY(14px)}
   .booted .reveal{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}
@@ -432,6 +446,59 @@
       </article>
     </section>
 
+    <!-- BUILD LOG 02 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 02</span><h2>Cornhole Sentinel — teaching the boards to keep score</h2></div>
+      <p class="sec-note">Still out in the field on this one, so this is a status report, not a victory lap.
+        Radar that feels the bag land, a camera to confirm the point — no scorekeeper, no phone app.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>A sensor that feels a beanbag hit the board — and knows if it counts.</h3>
+            <p class="blurb">A millimetre-wave radar watches each board and a camera confirms in-the-hole vs
+              on-the-board. The boards score the game themselves.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>LD2420</b> · mmWave</span>
+            <span class="chip"><b>ESP32-C5</b> · node</span>
+            <span class="chip"><b>camera</b> · confirm</span>
+          </div>
+        </div>
+
+        <div class="log">
+          <h4>Where it's fighting me</h4>
+          <ul class="walls">
+            <li class="wall-item"><div class="no">01</div><div>
+              <div class="t">The board that just died</div>
+              <div class="d">The original NodeMCU quit on me mid-build. Moved the whole node over to an
+                <code>ESP32-C5</code> — which honestly turned out to be an upgrade.</div></div></li>
+            <li class="wall-item"><div class="no">02</div><div>
+              <div class="t">Wrong sensor in my head</div>
+              <div class="d">I was configuring for an <code>LD2410</code> and couldn't get clean readings — until I
+                actually read the silkscreen and saw it's an <code>HLK-LD2420</code>. Different part, different setup. Lesson: check the chip, not your assumption.</div></div></li>
+            <li class="wall-item"><div class="no">03</div><div>
+              <div class="t">First node talking</div>
+              <div class="d">Got a node alive on ESPHome with the radar streaming distance data. Proof the idea works —
+                now it just has to work <em>reliably</em>.</div></div></li>
+          </ul>
+
+          <h4>What's next</h4>
+          <div class="learned" style="margin-left:0;margin-right:0">
+            <span class="lt" style="border-color:var(--wip-bg)">aim + tune the radar (bag-land vs noise)</span>
+            <span class="lt" style="border-color:var(--wip-bg)">a camera per board for in-hole calls</span>
+            <span class="lt" style="border-color:var(--wip-bg)">score logic + a way to show it</span>
+          </div>
+        </div>
+
+        <div class="landed building">
+          <span class="k">Status</span>
+          <p>Building. One node live and reading radar; the real work now is aiming and tuning so a good throw
+            reads clean every time. Cameras come after.</p>
+        </div>
+      </article>
+    </section>
+
     <!-- FLEET GRID -->
     <section>
       <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>
@@ -524,7 +591,24 @@
           <p>I want to be a pro at this. To me that means putting the work where people can see it — the messy
             commits, not just the finished demo. This page is receipt number one.</p>
           <div class="ghcmd"><span class="p">git</span> commit -m "learned something today" &amp;&amp; <span class="p">git</span> push</div>
-          <p class="ghnote">// drop in your GitHub handle and I'll wire the live activity graph in next</p>
+          <p class="ghnote">// wired to github.com/stackzac22 — the activity below is live</p>
+        </div>
+      </div>
+
+      <div class="gh-live reveal d3">
+        <div class="hd">
+          <h3>Live from GitHub</h3>
+          <a href="https://github.com/stackzac22" target="_blank" rel="noopener">github.com/stackzac22 ↗</a>
+        </div>
+        <div class="gh-cards">
+          <img loading="lazy" alt="GitHub stats for stackzac22"
+            src="https://github-readme-stats.vercel.app/api?username=stackzac22&show_icons=true&hide_border=true&bg_color=00000000&title_color=0B8B80&icon_color=0B8B80&text_color=7d8c88&hide_title=true">
+          <img loading="lazy" alt="Current commit streak for stackzac22"
+            src="https://streak-stats.demolab.com/?user=stackzac22&hide_border=true&background=00000000&ring=0B8B80&fire=0B8B80&currStreakLabel=0B8B80&sideLabels=7d8c88&dates=7d8c88&sideNums=7d8c88&currStreakNum=7d8c88&stroke=7d8c88&excludeDaysLabel=7d8c88">
+        </div>
+        <div class="gh-chart">
+          <img loading="lazy" alt="GitHub contribution graph for stackzac22"
+            src="https://ghchart.rshah.org/0B8B80/stackzac22">
         </div>
       </div>
     </section>
@@ -550,6 +634,10 @@
     });
     // boot reveal
     requestAnimationFrame(function(){ setTimeout(function(){ page.classList.add('booted'); },80); });
+    // GitHub cards are live external images — hide the band gracefully if they can't load (e.g. sandboxed preview)
+    document.querySelectorAll('.gh-live img').forEach(function(img){
+      img.addEventListener('error',function(){ var s=img.closest('.gh-live'); if(s) s.style.display='none'; });
+    });
   })();
 </script>
 </body>
