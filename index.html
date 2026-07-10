@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="GhostGrid — a self-taught homelab journal: ~7 months from first computer to a fully-local voice AI, ESP32 fleet, and mobile-security rigs.">
+<meta name="color-scheme" content="light dark">
+<title>GhostGrid — field notes from a homelab</title>
+<style>
+  :root{
+    /* neutrals: cool slate with a slight teal bias — chosen, not default grey */
+    --bg:#E7ECEA;
+    --surface:#F4F7F5;
+    --card:#FFFFFF;
+    --ink:#0F1B1A;
+    --ink-soft:#33403E;
+    --muted:#5A6865;
+    --line:#D2DBD8;
+    --line-soft:#E0E7E4;
+    /* signal accent */
+    --accent:#0B8B80;
+    --accent-ink:#076a61;
+    --accent-glow:rgba(11,139,128,.10);
+    /* semantic status (separate from accent) */
+    --live:#1C8A54;   --live-bg:rgba(28,138,84,.10);
+    --wip:#A9761A;    --wip-bg:rgba(169,118,26,.12);
+    --parked:#647471; --parked-bg:rgba(100,116,113,.12);
+    --wall:#A44A32;   --wall-bg:rgba(164,74,50,.10);
+    --shadow:0 1px 2px rgba(15,27,26,.05),0 8px 26px -14px rgba(15,27,26,.18);
+
+    --font-grotesque:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+
+    --maxw:1080px;
+    --r:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0B1312;
+      --surface:#101B19;
+      --card:#152220;
+      --ink:#E7EEEB;
+      --ink-soft:#C2CECA;
+      --muted:#889793;
+      --line:#22322F;
+      --line-soft:#1A2826;
+      --accent:#33CFC0;
+      --accent-ink:#5adacd;
+      --accent-glow:rgba(51,207,192,.10);
+      --live:#4FC488;   --live-bg:rgba(79,196,136,.11);
+      --wip:#DBA745;    --wip-bg:rgba(219,167,69,.12);
+      --parked:#7E908C; --parked-bg:rgba(126,144,140,.12);
+      --wall:#D2775C;   --wall-bg:rgba(210,119,92,.11);
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -18px rgba(0,0,0,.7);
+    }
+  }
+  /* explicit toggle wins in both directions */
+  :root[data-theme="light"]{
+    --bg:#E7ECEA;--surface:#F4F7F5;--card:#FFFFFF;--ink:#0F1B1A;--ink-soft:#33403E;--muted:#5A6865;
+    --line:#D2DBD8;--line-soft:#E0E7E4;--accent:#0B8B80;--accent-ink:#076a61;--accent-glow:rgba(11,139,128,.10);
+    --live:#1C8A54;--live-bg:rgba(28,138,84,.10);--wip:#A9761A;--wip-bg:rgba(169,118,26,.12);
+    --parked:#647471;--parked-bg:rgba(100,116,113,.12);--wall:#A44A32;--wall-bg:rgba(164,74,50,.10);
+    --shadow:0 1px 2px rgba(15,27,26,.05),0 8px 26px -14px rgba(15,27,26,.18);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B1312;--surface:#101B19;--card:#152220;--ink:#E7EEEB;--ink-soft:#C2CECA;--muted:#889793;
+    --line:#22322F;--line-soft:#1A2826;--accent:#33CFC0;--accent-ink:#5adacd;--accent-glow:rgba(51,207,192,.10);
+    --live:#4FC488;--live-bg:rgba(79,196,136,.11);--wip:#DBA745;--wip-bg:rgba(219,167,69,.12);
+    --parked:#7E908C;--parked-bg:rgba(126,144,140,.12);--wall:#D2775C;--wall-bg:rgba(210,119,92,.11);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 34px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0}
+  .page{
+    position:relative;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-grotesque);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* faint grid paper — literal "grid" */
+  .page::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--line-soft) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(120% 80% at 50% 0%,#000 30%,transparent 78%);
+            mask-image:radial-gradient(120% 80% at 50% 0%,#000 30%,transparent 78%);
+    opacity:.6;
+  }
+  .glow{position:fixed;z-index:0;pointer-events:none;filter:blur(60px);opacity:.5}
+  .glow.a{top:-120px;right:-80px;width:360px;height:360px;background:var(--accent-glow)}
+  .glow.b{top:640px;left:-120px;width:340px;height:340px;background:var(--accent-glow)}
+
+  .wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+  /* ---- typography ---- */
+  h1,h2,h3{text-wrap:balance;margin:0}
+  .mono{font-family:var(--font-mono)}
+  .eyebrow{
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent-ink);font-weight:600;
+  }
+  .serif{font-family:var(--font-serif)}
+  .lead{font-family:var(--font-serif);color:var(--ink-soft)}
+
+  /* ---- top bar ---- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0 8px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--font-mono);font-weight:700;letter-spacing:.02em}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 4px var(--accent-glow);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 3px var(--accent-glow)}50%{box-shadow:0 0 0 7px transparent}}
+  .brand small{color:var(--muted);font-weight:500;letter-spacing:.02em}
+  .theme-btn{
+    font-family:var(--font-mono);font-size:.74rem;letter-spacing:.06em;
+    background:var(--surface);color:var(--ink-soft);border:1px solid var(--line);
+    padding:8px 12px;border-radius:9px;cursor:pointer;transition:border-color .18s,color .18s}
+  .theme-btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .theme-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ---- hero ---- */
+  .hero{padding:38px 0 34px;border-bottom:1px solid var(--line)}
+  .term{
+    font-family:var(--font-mono);font-size:.92rem;color:var(--ink-soft);
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;max-width:640px;box-shadow:var(--shadow)}
+  .term .line{display:block;white-space:pre-wrap}
+  .term .p{color:var(--accent-ink)}
+  .term .o{color:var(--ink)}
+  .cursor{display:inline-block;width:8px;height:1.05em;vertical-align:-2px;background:var(--accent);
+    margin-left:2px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .hero h1{
+    font-family:var(--font-grotesque);font-weight:800;letter-spacing:-.02em;
+    font-size:clamp(2.1rem,6vw,3.4rem);line-height:1.04;margin:26px 0 0}
+  .hero h1 .hl{color:var(--accent-ink)}
+  .hero .sub{font-family:var(--font-serif);font-size:clamp(1.05rem,2.3vw,1.28rem);
+    color:var(--ink-soft);max-width:56ch;margin:18px 0 0}
+  .stats{display:flex;flex-wrap:wrap;gap:26px;margin-top:26px}
+  .stat .n{font-family:var(--font-mono);font-weight:700;font-size:1.5rem;color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat .l{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+
+  /* ---- section frame ---- */
+  section{padding:52px 0}
+  .sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .sec-head h2{font-family:var(--font-grotesque);font-weight:800;letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.6vw,2.05rem)}
+  .sec-note{font-family:var(--font-serif);color:var(--muted);max-width:60ch;margin:2px 0 30px;font-size:1.04rem}
+
+  /* ---- featured build ---- */
+  .feature{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);overflow:hidden}
+  .feature-top{padding:26px 28px 22px;border-bottom:1px solid var(--line-soft);
+    display:flex;flex-wrap:wrap;gap:18px 24px;align-items:flex-start;justify-content:space-between}
+  .feature-top h3{font-family:var(--font-grotesque);font-weight:800;font-size:clamp(1.35rem,3vw,1.7rem);
+    letter-spacing:-.01em;max-width:20ch}
+  .feature-top .blurb{font-family:var(--font-serif);color:var(--ink-soft);max-width:46ch;margin-top:10px;font-size:1.05rem}
+  .chain{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chip{font-family:var(--font-mono);font-size:.74rem;color:var(--ink-soft);
+    background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+  .chip b{color:var(--accent-ink);font-weight:600}
+
+  .log{padding:8px 28px 26px}
+  .log h4{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--muted);margin:26px 0 4px;font-weight:600}
+  .walls{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:2px}
+  .wall-item{display:grid;grid-template-columns:26px 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--line-soft)}
+  .wall-item:first-child{border-top:0}
+  .wall-item .no{font-family:var(--font-mono);font-size:.8rem;color:var(--wall);font-weight:700;padding-top:2px}
+  .wall-item .t{font-family:var(--font-grotesque);font-weight:700;color:var(--ink);margin-bottom:3px}
+  .wall-item .d{font-family:var(--font-serif);color:var(--ink-soft);font-size:1.02rem}
+  .wall-item .d code{font-family:var(--font-mono);font-size:.86em;background:var(--surface);
+    border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--accent-ink)}
+  .landed{margin:22px 28px 28px;background:var(--live-bg);border:1px solid color-mix(in srgb,var(--live) 34%,transparent);
+    border-radius:11px;padding:16px 18px;display:flex;gap:13px;align-items:flex-start}
+  .landed .k{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--live);font-weight:700;white-space:nowrap;padding-top:2px}
+  .landed p{margin:0;font-family:var(--font-serif);color:var(--ink-soft);font-size:1.03rem}
+
+  /* ---- learned tags ---- */
+  .learned{display:flex;flex-wrap:wrap;gap:8px;margin:6px 28px 26px}
+  .learned .lt{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-soft);
+    background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+  .learned .lt::before{content:"+ ";color:var(--live);font-weight:700}
+
+  /* ---- fleet grid ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px}
+  .node{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px;transition:transform .18s,border-color .18s}
+  .node:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+  .node .id{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;color:var(--muted)}
+  .node .nm{font-family:var(--font-grotesque);font-weight:800;font-size:1.08rem;letter-spacing:-.01em}
+  .node .ds{font-family:var(--font-serif);color:var(--ink-soft);font-size:.98rem;flex:1}
+  .node .hw{font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+  .pill{align-self:flex-start;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;
+    text-transform:uppercase;font-weight:700;padding:4px 9px;border-radius:999px;display:inline-flex;gap:6px;align-items:center}
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill.live{color:var(--live);background:var(--live-bg)}
+  .pill.wip{color:var(--wip);background:var(--wip-bg)}
+  .pill.parked{color:var(--parked);background:var(--parked-bg)}
+  .pill.wall{color:var(--wall);background:var(--wall-bg)}
+  .pill.incoming{color:var(--accent-ink);background:var(--accent-glow)}
+
+  /* ---- learning in public ---- */
+  .two{display:grid;grid-template-columns:1.15fr .85fr;gap:22px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px 26px;box-shadow:var(--shadow)}
+  .panel h3{font-family:var(--font-grotesque);font-weight:800;font-size:1.2rem;margin-bottom:6px}
+  .panel p{font-family:var(--font-serif);color:var(--ink-soft);margin:0 0 4px}
+  .ladder{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:12px}
+  .ladder li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+  .ladder .mk{font-family:var(--font-mono);font-size:.72rem;color:var(--accent-ink);padding-top:3px;white-space:nowrap}
+  .ladder .tx b{font-family:var(--font-grotesque);color:var(--ink)}
+  .ladder .tx span{font-family:var(--font-serif);color:var(--muted);display:block;font-size:.96rem}
+
+  .ship{background:linear-gradient(180deg,var(--surface),var(--card));
+    border:1px solid var(--line);border-radius:var(--r);padding:24px 26px;box-shadow:var(--shadow)}
+  .ship h3{font-family:var(--font-grotesque);font-weight:800;font-size:1.2rem}
+  .ship p{font-family:var(--font-serif);color:var(--ink-soft);margin:8px 0 0}
+  .ghcmd{font-family:var(--font-mono);font-size:.82rem;background:var(--bg);border:1px solid var(--line);
+    border-radius:9px;padding:12px 14px;margin-top:16px;color:var(--ink-soft);overflow-x:auto;white-space:nowrap}
+  .ghcmd .p{color:var(--accent-ink)}
+  .ghnote{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);margin-top:10px}
+
+  footer{border-top:1px solid var(--line);padding:30px 0 46px;margin-top:20px}
+  footer .fr{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+    font-family:var(--font-mono);font-size:.76rem;color:var(--muted)}
+  footer .fr b{color:var(--ink-soft);font-weight:600}
+
+  /* ---- origin timeline ---- */
+  .tl{position:relative;margin-top:8px;padding-left:8px}
+  .tl-item{position:relative;display:grid;grid-template-columns:132px 1fr;gap:22px;
+    padding:20px 0;border-top:1px solid var(--line-soft)}
+  .tl-item:first-child{border-top:0}
+  .tl-when{font-family:var(--font-mono);font-size:.76rem;color:var(--accent-ink);letter-spacing:.04em;padding-top:3px}
+  .tl-when b{display:block;color:var(--muted);font-weight:500;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
+  .tl-body h4{font-family:var(--font-grotesque);font-weight:800;font-size:1.12rem;letter-spacing:-.01em;margin-bottom:5px}
+  .tl-body p{font-family:var(--font-serif);color:var(--ink-soft);margin:0;font-size:1.04rem;max-width:60ch}
+  .tl-body p code{font-family:var(--font-mono);font-size:.85em;background:var(--surface);
+    border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--accent-ink)}
+  .gear{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .gear span{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);
+    border:1px dashed var(--line);border-radius:6px;padding:4px 8px}
+  @media (max-width:620px){.tl-item{grid-template-columns:1fr;gap:6px}}
+
+  /* ---- boot reveal ---- */
+  .reveal{opacity:0;transform:translateY(14px)}
+  .booted .reveal{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}
+  .booted .reveal.d1{transition-delay:.05s}
+  .booted .reveal.d2{transition-delay:.14s}
+  .booted .reveal.d3{transition-delay:.24s}
+  .booted .reveal.d4{transition-delay:.34s}
+
+  @media (max-width:760px){
+    .two{grid-template-columns:1fr}
+    .feature-top{flex-direction:column}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .brand .dot,.cursor{animation:none}
+    .node:hover{transform:none}
+  }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <div class="glow a"></div>
+  <div class="glow b"></div>
+  <div class="wrap">
+
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> ghostgrid <small>// homelab log</small></div>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle light and dark theme">theme</button>
+    </div>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="term" role="img" aria-label="terminal reading: whoami; a student building a private self-hosted world one board at a time">
+        <span class="line"><span class="p">tec@ghostgrid</span><span class="o">:~$ whoami</span></span>
+        <span class="line"><span class="o">&gt; a student. building a private, self-hosted world</span></span>
+        <span class="line"><span class="o">&gt; one board at a time.<span class="cursor" aria-hidden="true"></span></span></span>
+      </div>
+
+      <h1 class="reveal d1">Field notes from a homelab I'm<br>building <span class="hl">from scratch</span>.</h1>
+      <p class="sub reveal d2">No cloud. A lot of fiascos, kept on purpose. About seven months ago I got my
+        first computer <em>ever</em> — a month in, I was still working out how to copy and paste in a terminal.
+        This is the receipts, from zero.</p>
+
+      <div class="stats reveal d3">
+        <div class="stat"><div class="n">~7</div><div class="l">months self-taught</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">prior experience</div></div>
+        <div class="stat"><div class="n">1</div><div class="l">fully-local voice AI</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">cloud services</div></div>
+      </div>
+    </header>
+
+    <!-- ORIGIN TIMELINE -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">How this started</span><h2>From "what's a terminal" to a homelab, in about seven months</h2></div>
+      <p class="sec-note">The real order it happened. None of it was planned — each fiasco just opened the next door.</p>
+
+      <div class="tl reveal d1">
+        <div class="tl-item">
+          <div class="tl-when">01<b>the deal</b></div>
+          <div class="tl-body">
+            <h4>My first computer, ever</h4>
+            <p>A Gen-4 ThinkPad X1 I got on a deal. It wouldn't run Windows&nbsp;11 — didn't meet the requirements.
+              Honestly that's <em>why</em> I didn't know anything yet. I was starting from zero.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-when">02<b>bent the rules</b></div>
+          <div class="tl-body">
+            <h4>Sidestepped the Windows 11 block</h4>
+            <p>Figured out you could get around the requirements, so I did — and then didn't even like Windows once
+              it was on. First taste of "the official answer isn't the only answer."</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-when">03<b>bare metal</b></div>
+          <div class="tl-body">
+            <h4>Flashed Kali onto bare metal</h4>
+            <p>Wiped the laptop and installed Kali Linux directly. What followed was a <em>series</em> of fiascos —
+              and every single one turned into a learning opportunity. This is where <code>ssh</code>, <code>sudo</code>,
+              user privileges and reading errors instead of panicking all clicked.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-when">04<b>the spark</b></div>
+          <div class="tl-body">
+            <h4>An M5Stack StickC Plus 2 — and I was hooked</h4>
+            <p>Picked up a tiny ESP32 and fell in love. Then I bought everything that looked capable, learned by
+              breaking it, and gave my first couple of builds away.</p>
+            <div class="gear">
+              <span>StickC Plus 2</span><span>Cardputer ADV</span><span>CYD ×6</span><span>XIAO S3 Sense cam</span>
+              <span>ESP32-C5 Waveshare</span><span>LilyGo T-Dongle</span><span>M5 Stamp Fly drone</span>
+              <span>Pi Zero 2W</span><span>OrangePi Zero 2W</span><span>Pi 4B</span>
+            </div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-when">05<b>going mobile</b></div>
+          <div class="tl-body">
+            <h4>Rooted and degoogled a phone into a pentest rig</h4>
+            <p>Took a OnePlus 6T, degoogled and rooted it, and ran NetHunter Pro + LineageOS. Dual-slot, patched the
+              WiFi for monitor mode and injection, and actually tested it. Old Nexus phones (6, 5X) joined the fleet too.</p>
+            <div class="gear">
+              <span>OnePlus 6T · NetHunter Pro</span><span>LineageOS</span><span>monitor + injection</span>
+              <span>Nexus 6 · shamu</span><span>Nexus 5X</span><span>Tailscale mesh</span>
+            </div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-when">06<b>the plan</b></div>
+          <div class="tl-body">
+            <h4>Next: the final-boss setup</h4>
+            <p>Windows 11 and NetHunter Pro living side by side — a daily driver that's also a full mobile-security
+              lab. Not there yet. That's the point of writing it down.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED BUILD -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 01</span><h2>Ragnar — a voice assistant that never leaves the house</h2></div>
+      <p class="sec-note">My first fully-local voice build. The honest version: what it does, and every wall I
+        walked into getting there. The walls are the point.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>Talk to it, it answers — and nothing you say ever touches the internet.</h3>
+            <p class="blurb">A little pyramid speaker on my desk hears me, a 7-billion-parameter model on an
+              old phone thinks about it, and a text-to-speech voice answers. All of it runs on hardware I own.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>Whisper</b> · ears</span>
+            <span class="chip"><b>Qwen 7B</b> · brain</span>
+            <span class="chip"><b>Piper</b> · voice</span>
+          </div>
+        </div>
+
+        <div class="log">
+          <h4>The walls I hit</h4>
+          <ul class="walls">
+            <li class="wall-item"><div class="no">01</div><div>
+              <div class="t">The cable that only charged</div>
+              <div class="d">Lost an hour because a USB-C cable carried power but no data — the board looked dead.
+                Learned the ESP32 download-mode trick: hold reset until the little green LED, <em>then</em> it flashes.</div></div></li>
+            <li class="wall-item"><div class="no">02</div><div>
+              <div class="t">The board that quietly refused my WiFi</div>
+              <div class="d">My phone and Pi joined the network fine, so I almost blamed the chip. Turned out the
+                access point defaulted to <code>WPA3</code>, which the ESP32 can't do — forcing <code>WPA2</code> fixed it instantly.</div></div></li>
+            <li class="wall-item"><div class="no">03</div><div>
+              <div class="t">My own network wouldn't let two devices talk</div>
+              <div class="d">The WiFi dongle isolates clients from each other, so the speaker and the brain couldn't
+                reach one another. I bridged them with a tiny <code>socat</code> relay through the gateway. First relay I've ever built.</div></div></li>
+            <li class="wall-item"><div class="no">04</div><div>
+              <div class="t">The wake word that went rogue</div>
+              <div class="d">Tried a "hey&nbsp;jarvis" hotword. It looped and started shouting responses to room noise. I
+                rolled it back and wrote down exactly why it failed. Knowing when to stop is a skill too.</div></div></li>
+            <li class="wall-item"><div class="no">05</div><div>
+              <div class="t">Audio that rasped</div>
+              <div class="d">The amp has no volume knob I could set in software, so loud meant distortion. Found the clean
+                level by ear, locked it into the firmware, and pushed the fix <em>over the air</em> — no cable needed anymore.</div></div></li>
+          </ul>
+        </div>
+
+        <h4 class="log" style="padding-top:0;padding-bottom:0;margin:4px 28px -6px">What I picked up doing it</h4>
+        <div class="learned">
+          <span class="lt">over-the-air firmware flashing</span>
+          <span class="lt">editing Home Assistant storage by hand</span>
+          <span class="lt">nmcli WiFi / AP config</span>
+          <span class="lt">systemd services</span>
+          <span class="lt">reading dmesg USB errors</span>
+          <span class="lt">socat TCP relays</span>
+          <span class="lt">how WPA2 vs WPA3 actually works</span>
+        </div>
+
+        <div class="landed">
+          <span class="k">Where it landed</span>
+          <p>Live on my desk. Push-to-talk, fully local, zero cloud. The wake word is parked with notes for the
+            next attempt — the rest of it just works, and I understand every piece of why.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- FLEET GRID -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>
+      <p class="sec-note">Not everything works yet. Statuses are real — "hit a wall" and "parked" are on here too,
+        because that's the true state of a homelab you're still learning on.</p>
+
+      <div class="grid">
+        <div class="node reveal d1">
+          <span class="id">NODE · m5-voice</span>
+          <span class="nm">Ragnar</span>
+          <p class="ds">Local voice assistant on a desk pyramid. Whisper + Qwen 7B + Piper.</p>
+          <span class="hw">AtomS3 · Echo Base</span>
+          <span class="pill live">live</span>
+        </div>
+        <div class="node reveal d1">
+          <span class="id">NODE · the-one</span>
+          <span class="nm">The Brain</span>
+          <p class="ds">Old OnePlus 6T running Kali as an 8GB AI server — hosts the models and Home Assistant.</p>
+          <span class="hw">OnePlus 6T · SD845</span>
+          <span class="pill live">live</span>
+        </div>
+        <div class="node reveal d2">
+          <span class="id">NODE · ragnar-pi4</span>
+          <span class="nm">RaspyJack + Ragnar</span>
+          <p class="ds">Pentest framework with a local-AI tier I unlocked by moving it to a 4GB Pi.</p>
+          <span class="hw">Raspberry Pi 4B</span>
+          <span class="pill live">live</span>
+        </div>
+        <div class="node reveal d2">
+          <span class="id">NODE · ghost-cam</span>
+          <span class="nm">GhostESP Cam</span>
+          <p class="ds">On-board motion detection that fires image alerts to Discord. No cloud vision.</p>
+          <span class="hw">ESP32-S3 · XIAO</span>
+          <span class="pill live">live</span>
+        </div>
+        <div class="node reveal d3">
+          <span class="id">NODE · mesh-6854</span>
+          <span class="nm">Meshtastic Node</span>
+          <p class="ds">Off-grid LoRa mesh radio. Got a friend's node on the network after chasing a bad cable.</p>
+          <span class="hw">Heltec V3</span>
+          <span class="pill live">live</span>
+        </div>
+        <div class="node reveal d3">
+          <span class="id">NODE · cornhole</span>
+          <span class="nm">Cornhole Sentinel</span>
+          <p class="ds">Radar + camera auto-scoring for cornhole. Boards see the bags and keep score.</p>
+          <span class="hw">ESP32-C5 · LD2420</span>
+          <span class="pill wip">building</span>
+        </div>
+        <div class="node reveal d4">
+          <span class="id">NODE · csi-mesh</span>
+          <span class="nm">Presence Sensing Lab</span>
+          <p class="ds">Whole-home presence from WiFi signal reflections (CSI). Next: 5&nbsp;GHz for finer detail.</p>
+          <span class="hw">ESP32 · CSI</span>
+          <span class="pill wip">exploring</span>
+        </div>
+        <div class="node reveal d4">
+          <span class="id">NODE · stamp-c5</span>
+          <span class="nm">Stamp-C5 Nodes</span>
+          <p class="ds">Dual-band WiFi 6 + Zigbee/Thread. Earmarked for the lights and the 5&nbsp;GHz CSI mesh.</p>
+          <span class="hw">ESP32-C5 · ×4</span>
+          <span class="pill incoming">incoming</span>
+        </div>
+        <div class="node reveal d4">
+          <span class="id">NODE · zb-lights</span>
+          <span class="nm">Zigbee Lights</span>
+          <p class="ds">Migrated the Zigbee network to my own broker; the bulbs won't re-pair yet. Parked, not forgotten.</p>
+          <span class="hw">zigbee2mqtt · SONOFF</span>
+          <span class="pill parked">parked</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEARNING IN PUBLIC -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Why this exists</span><h2>Learning in public, on purpose</h2></div>
+      <div class="two">
+        <div class="panel reveal d1">
+          <h3>The honest ladder</h3>
+          <p>I'm not pretending to be past any of this. Here's roughly where I actually am:</p>
+          <ul class="ladder">
+            <li><span class="mk">[done]</span><span class="tx"><b>The terminal stopped scaring me</b><span>ssh, vnc, sudo, user privilege control, reading errors instead of panicking</span></span></li>
+            <li><span class="mk">[done]</span><span class="tx"><b>Bare metal &amp; rooting</b><span>Kali on metal, rooting phones, NetHunter Pro, LineageOS, dual-slot WiFi monitor + injection</span></span></li>
+            <li><span class="mk">[now]</span><span class="tx"><b>Networking for real</b><span>WPA2/WPA3, AP isolation, socat relays, Tailscale mesh</span></span></li>
+            <li><span class="mk">[next]</span><span class="tx"><b>Git in public + the final boss</b><span>commit as I go, not after; Windows 11 + NetHunter Pro side by side</span></span></li>
+          </ul>
+        </div>
+        <div class="ship reveal d2">
+          <h3>Ship in public</h3>
+          <p>I want to be a pro at this. To me that means putting the work where people can see it — the messy
+            commits, not just the finished demo. This page is receipt number one.</p>
+          <div class="ghcmd"><span class="p">git</span> commit -m "learned something today" &amp;&amp; <span class="p">git</span> push</div>
+          <p class="ghnote">// drop in your GitHub handle and I'll wire the live activity graph in next</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="fr">
+        <span><b>GhostGrid</b> — a homelab, documented while it's still being figured out.</span>
+        <span>built &amp; broken by <b>tec</b> · 2026</span>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement, page=document.getElementById('page'), btn=document.getElementById('themeBtn');
+    function current(){var t=root.getAttribute('data-theme'); if(t) return t;
+      return window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+    btn.addEventListener('click',function(){
+      var next=current()==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+    });
+    // boot reveal
+    requestAnimationFrame(function(){ setTimeout(function(){ page.classList.add('booted'); },80); });
+  })();
+</script>
+</body>
+</html>
