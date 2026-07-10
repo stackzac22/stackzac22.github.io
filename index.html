@@ -601,8 +601,6 @@
           <a href="https://github.com/stackzac22" target="_blank" rel="noopener">github.com/stackzac22 ↗</a>
         </div>
         <div class="gh-cards">
-          <img loading="lazy" alt="GitHub stats for stackzac22"
-            src="https://github-readme-stats.vercel.app/api?username=stackzac22&show_icons=true&hide_border=true&bg_color=00000000&title_color=0B8B80&icon_color=0B8B80&text_color=7d8c88&hide_title=true">
           <img loading="lazy" alt="Current commit streak for stackzac22"
             src="https://streak-stats.demolab.com/?user=stackzac22&hide_border=true&background=00000000&ring=0B8B80&fire=0B8B80&currStreakLabel=0B8B80&sideLabels=7d8c88&dates=7d8c88&sideNums=7d8c88&currStreakNum=7d8c88&stroke=7d8c88&excludeDaysLabel=7d8c88">
         </div>
@@ -634,10 +632,17 @@
     });
     // boot reveal
     requestAnimationFrame(function(){ setTimeout(function(){ page.classList.add('booted'); },80); });
-    // GitHub cards are live external images — hide the band gracefully if they can't load (e.g. sandboxed preview)
-    document.querySelectorAll('.gh-live img').forEach(function(img){
-      img.addEventListener('error',function(){ var s=img.closest('.gh-live'); if(s) s.style.display='none'; });
-    });
+    // GitHub cards are live external images — hide each that fails; hide the whole band only if all fail
+    // (so a single flaky service can't blank it, and the sandboxed preview hides it cleanly)
+    (function(){
+      var imgs=document.querySelectorAll('.gh-live img'), total=imgs.length, failed=0;
+      imgs.forEach(function(img){
+        img.addEventListener('error',function(){
+          img.style.display='none'; failed++;
+          if(failed>=total){ var s=document.querySelector('.gh-live'); if(s) s.style.display='none'; }
+        });
+      });
+    })();
   })();
 </script>
 </body>
