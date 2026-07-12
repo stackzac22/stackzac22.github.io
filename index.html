@@ -263,6 +263,21 @@
   .gh-chart{width:100%;overflow-x:auto;margin-top:16px}
   .gh-chart img{width:100%;min-width:520px;display:block}
 
+  /* ---- comparison table (build log 03) ---- */
+  .cmp{width:100%;overflow-x:auto;margin:6px 0 4px;padding:0 28px}
+  .cmp table{border-collapse:collapse;min-width:540px;width:100%;font-size:.92rem}
+  .cmp th,.cmp td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  .cmp th{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .cmp td:first-child{font-family:var(--font-grotesque);font-weight:600;color:var(--ink);white-space:nowrap}
+  .cmp tr:last-child td{border-bottom:0;font-weight:700}
+  .cmp .r{font-family:var(--font-mono);font-size:.82rem}
+  .cmp .pass{color:var(--live)} .cmp .fail{color:var(--wall)} .cmp .warn{color:var(--wip)}
+  .verdict{display:flex;flex-wrap:wrap;gap:20px}
+  .verdict > div{flex:1;min-width:240px}
+  .verdict h5{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px}
+  .verdict.good h5{color:var(--live)} .verdict.bad h5{color:var(--wall)}
+  .verdict ul{margin:0;padding-left:18px} .verdict li{font-family:var(--font-serif);color:var(--ink-soft);margin-bottom:6px;font-size:1rem}
+
   /* ---- boot reveal ---- */
   .reveal{opacity:0;transform:translateY(14px)}
   .booted .reveal{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}
@@ -495,6 +510,73 @@
           <span class="k">Status</span>
           <p>Building. One node live and reading radar; the real work now is aiming and tuning so a good throw
             reads clean every time. Cameras come after.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- BUILD LOG 03 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 03</span><h2>Auditing my own AI auditor</h2></div>
+      <p class="sec-note">I want to use a local AI to help on authorized pentests. But putting your name on a job
+        means knowing your tools' limits first — so before I trusted Ragnar, I made him take a test.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>Two local models, six analyst tasks, one honest scorecard.</h3>
+            <p class="blurb">I ran the same battery — read scan output, draft findings, recall a CVE, give an
+              exact command, and refuse to bluff — against a 7B (on an old phone) and a 3B (on a Pi). No cloud, no cheating.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>qwen 7b</b> · phone</span>
+            <span class="chip"><b>qwen 3b</b> · pi</span>
+            <span class="chip"><b>6</b> tasks</span>
+          </div>
+        </div>
+
+        <div class="cmp reveal d2">
+          <table>
+            <thead><tr><th>Task</th><th>7B (phone)</th><th>3B (pi)</th></tr></thead>
+            <tbody>
+              <tr><td>Read a port scan</td><td class="r pass">✓ accurate, sound priorities</td><td class="r fail">✗ timed out</td></tr>
+              <tr><td>Plan next steps</td><td class="r fail">✗ timed out</td><td class="r fail">✗ timed out</td></tr>
+              <tr><td>Draft the finding</td><td class="r pass">✓ clean &amp; correct</td><td class="r warn">~ muddled the facts</td></tr>
+              <tr><td>Recall a real CVE</td><td class="r fail">✗ timed out</td><td class="r fail">✗ timed out</td></tr>
+              <tr><td>Give exact command</td><td class="r fail">✗ invented 2 fake scripts</td><td class="r fail">✗ timed out</td></tr>
+              <tr><td>Refuse to bluff</td><td class="r pass">✓ called out a fake CVE</td><td class="r pass">✓ called out a fake CVE</td></tr>
+              <tr><td>Finished</td><td class="r pass">4 of 6</td><td class="r fail">2 of 6</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="log">
+          <h4>What the test actually taught me</h4>
+          <div class="verdict">
+            <div class="good">
+              <h5>Where he's real</h5>
+              <ul>
+                <li>Reads tool output and prioritizes it sensibly</li>
+                <li>Drafts client-ready report text — genuinely his best skill</li>
+                <li>Wouldn't invent a Metasploit module for a fake CVE — he said "that's not real." Big trust signal.</li>
+              </ul>
+            </div>
+            <div class="bad">
+              <h5>Where he'll burn you</h5>
+              <ul>
+                <li>Handed me two <em>nonexistent</em> nmap scripts, sounding totally sure. Run it as-given → it errors.</li>
+                <li>Slow enough on little ARM boxes that a third of the tasks just timed out</li>
+                <li>The surprise: the smaller 3B <em>wasn't faster</em> — the Pi's CPU is weaker and already busy</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The rule</span>
+          <p>An AI assistant is an <strong>accelerator, not an authority.</strong> Every command it gives and every
+            CVE it names, I verify before it touches a client. That discipline <em>is</em> the job — and now I know
+            exactly where Ragnar helps and where he'd get me burned. He rides the 7B; he's a decent junior analyst,
+            never a source of truth.</p>
         </div>
       </article>
     </section>

@@ -12,6 +12,7 @@ kept honest: the wins, the walls, and the stuff that's still parked.
 - **The origin story** — first computer → Kali on bare metal → the ESP32 fleet → rooting phones for mobile security.
 - **Build log 01 — Ragnar:** a fully-local voice assistant (Whisper + a 7B model + Piper), zero cloud, told as "the walls I hit."
 - **Build log 02 — Cornhole Sentinel:** mmWave radar + camera auto-scoring, in progress.
+- **Build log 03 — Auditing my AI auditor:** honest 7B-vs-3B capability test of the pentest assistant.
 - **The grid** — every node and its honest status (live / building / parked).
 
 ## Stack I've been learning
