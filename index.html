@@ -294,6 +294,22 @@
     border:1px solid var(--line);border-radius:6px;width:24px;height:24px;display:grid;place-items:center}
   @media (max-width:640px){.vcards{grid-template-columns:1fr}}
 
+  /* ---- learning roadmap ---- */
+  .path{display:grid;gap:13px;margin-top:8px}
+  .phase{display:grid;grid-template-columns:96px 1fr;gap:18px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .phase .ph{font-family:var(--font-mono);font-weight:700;color:var(--accent-ink);font-size:.82rem;line-height:1.35;padding-top:3px}
+  .phase .ph small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
+  .phase h4{font-family:var(--font-grotesque);font-weight:800;font-size:1.08rem;margin:0 0 4px;letter-spacing:-.01em}
+  .phase p{font-family:var(--font-serif);color:var(--ink-soft);margin:0 0 10px;font-size:1.02rem;max-width:60ch}
+  .phase .res{display:flex;flex-wrap:wrap;gap:8px}
+  .phase .res a{font-family:var(--font-mono);font-size:.75rem;color:var(--accent-ink);text-decoration:none;
+    border:1px solid var(--line);border-radius:7px;padding:5px 10px;transition:border-color .15s,color .15s}
+  .phase .res a:hover{border-color:var(--accent)}
+  .phase .res a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .phase.goal{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:var(--accent-glow)}
+  @media (max-width:560px){.phase{grid-template-columns:1fr;gap:8px}}
+
   /* ---- boot reveal ---- */
   .reveal{opacity:0;transform:translateY(14px)}
   .booted .reveal{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}
@@ -732,6 +748,60 @@
         <div class="gh-chart">
           <img loading="lazy" alt="GitHub contribution graph for stackzac22"
             src="https://ghchart.rshah.org/0B8B80/stackzac22">
+        </div>
+      </div>
+    </section>
+
+    <!-- LEARNING ROADMAP -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">The road ahead</span><h2>The plan to go pro</h2></div>
+      <p class="sec-note">From self-taught tinkerer to working the field. Written down in public so I'm accountable to it —
+        and so the next beginner can see the map.</p>
+
+      <div class="path">
+        <div class="phase reveal d1">
+          <div class="ph">Phase 1<small>now · mo 1–2</small></div>
+          <div>
+            <h4>Foundations</h4>
+            <p>Get genuinely fluent with networking, Linux, and the terminal — hands-on, in the browser, no big theory dumps.</p>
+            <div class="res">
+              <a href="https://tryhackme.com/resources/blog/free_path" target="_blank" rel="noopener">TryHackMe · Pre-Security ↗</a>
+              <a href="https://www.youtube.com/results?search_query=networkchuck+linux" target="_blank" rel="noopener">NetworkChuck ↗</a>
+            </div>
+          </div>
+        </div>
+        <div class="phase reveal d2">
+          <div class="ph">Phase 2<small>mo 3–5</small></div>
+          <div>
+            <h4>Practical hacking + methodology</h4>
+            <p>The real workflow: recon → enumeration → exploitation → reporting. This is where "run a scanner" becomes "run a test."</p>
+            <div class="res">
+              <a href="https://tcm-sec.com/academy/practical-ethical-hacking/" target="_blank" rel="noopener">TCM · Practical Ethical Hacking ↗</a>
+              <a href="https://tcm-sec.com/free-cybersecurity-courses-where-to-begin/" target="_blank" rel="noopener">TCM · free playlist ↗</a>
+            </div>
+          </div>
+        </div>
+        <div class="phase reveal d3">
+          <div class="ph">Phase 3<small>mo 6+</small></div>
+          <div>
+            <h4>Real boxes &amp; the verify habit</h4>
+            <p>Break actual machines, and watch how a pro doubts every step — that's where the "verify, don't trust" discipline I'm already building gets drilled in.</p>
+            <div class="res">
+              <a href="https://www.hackthebox.com" target="_blank" rel="noopener">Hack The Box ↗</a>
+              <a href="https://www.youtube.com/results?search_query=ippsec" target="_blank" rel="noopener">IppSec walkthroughs ↗</a>
+              <a href="https://portswigger.net/web-security" target="_blank" rel="noopener">PortSwigger Web Security ↗</a>
+            </div>
+          </div>
+        </div>
+        <div class="phase goal reveal d4">
+          <div class="ph">The goal</div>
+          <div>
+            <h4>Certify, then earn the name</h4>
+            <p>Sit a hands-on cert, offer free pentests to my first few clients to build a reputation and a portfolio, and break into the industry — with the receipts to prove I did the work.</p>
+            <div class="res">
+              <a href="https://tcm-sec.com/how-to-be-an-ethical-hacker-in-2025/" target="_blank" rel="noopener">TCM · the roadmap ↗</a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
