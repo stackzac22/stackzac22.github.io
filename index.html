@@ -278,6 +278,22 @@
   .verdict.good h5{color:var(--live)} .verdict.bad h5{color:var(--wall)}
   .verdict ul{margin:0;padding-left:18px} .verdict li{font-family:var(--font-serif);color:var(--ink-soft);margin-bottom:6px;font-size:1rem}
 
+  /* ---- verify method (build log 03 companion) ---- */
+  .method{margin-top:26px}
+  .method-lead{font-family:var(--font-serif);color:var(--ink-soft);max-width:64ch;margin:10px 0 18px;font-size:1.05rem}
+  .method-lead b{color:var(--ink)}
+  .vcards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+  .vcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+  .vrow{display:grid;grid-template-columns:74px 1fr;gap:12px;align-items:start;font-family:var(--font-serif);color:var(--ink-soft);font-size:.98rem}
+  .vrow code{font-family:var(--font-mono);font-size:.8rem;color:var(--accent-ink);background:var(--surface);border:1px solid var(--line-soft);border-radius:5px;padding:2px 6px;word-break:break-word}
+  .vk{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-top:2px}
+  .vk.vpass{color:var(--live)} .vk.vfail{color:var(--wall)}
+  ol.checklist{counter-reset:c;list-style:none;margin:0;padding:0;display:grid;gap:9px;max-width:66ch}
+  ol.checklist li{counter-increment:c;display:grid;grid-template-columns:26px 1fr;gap:12px;font-family:var(--font-serif);color:var(--ink-soft);font-size:1.04rem}
+  ol.checklist li::before{content:counter(c);font-family:var(--font-mono);font-size:.8rem;font-weight:700;color:var(--accent-ink);
+    border:1px solid var(--line);border-radius:6px;width:24px;height:24px;display:grid;place-items:center}
+  @media (max-width:640px){.vcards{grid-template-columns:1fr}}
+
   /* ---- boot reveal ---- */
   .reveal{opacity:0;transform:translateY(14px)}
   .booted .reveal{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}
@@ -579,6 +595,33 @@
             never a source of truth.</p>
         </div>
       </article>
+
+      <div class="method reveal d2">
+        <div class="sec-head"><span class="eyebrow">The method · how I verify</span></div>
+        <p class="method-lead">Talk is cheap; here's the actual discipline. Every claim a tool makes gets the same
+          three steps before I trust it — <b>Claim → Source of truth → Verdict.</b> Two, worked from this audit:</p>
+
+        <div class="vcards">
+          <div class="vcard">
+            <div class="vrow"><span class="vk">Claim</span><code>--script smb-enum-shares,nbtscan,smb-anon-check</code></div>
+            <div class="vrow"><span class="vk">Source</span><span>nmap's own script folder — <code>ls /usr/share/nmap/scripts/</code></span></div>
+            <div class="vrow"><span class="vk vfail">Verdict</span><span>2 of 3 scripts <strong>don't exist</strong> — the command errors as given. Real ones: <code>smb-enum-users</code>, <code>nbstat</code>.</span></div>
+          </div>
+          <div class="vcard">
+            <div class="vrow"><span class="vk">Claim</span><span>"CVE-2021-41773 affects Apache…"</span></div>
+            <div class="vrow"><span class="vk">Source</span><span>nvd.nist.gov — the authoritative database</span></div>
+            <div class="vrow"><span class="vk vpass">Verdict</span><span>real: Apache <strong>2.4.49</strong>, path traversal, CVSS 9.8 — but the target ran 2.4.41, so it <strong>doesn't apply</strong>. Version is everything.</span></div>
+          </div>
+        </div>
+
+        <ol class="checklist">
+          <li>Never report or run a claim I haven't checked myself.</li>
+          <li>Every command → verify against the tool's own <code>--help</code> / <code>man</code>, or a lab VM first.</li>
+          <li>Every CVE → look it up on NVD, and match the <em>exact</em> version.</li>
+          <li>Every "fact" → cross-check one authoritative source, minimum.</li>
+          <li>Can't verify it? It doesn't go in the report.</li>
+        </ol>
+      </div>
     </section>
 
     <!-- FLEET GRID -->
