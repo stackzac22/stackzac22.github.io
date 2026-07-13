@@ -610,6 +610,16 @@
             exactly where Ragnar helps and where he'd get me burned. He rides the 7B; he's a decent junior analyst,
             never a source of truth.</p>
         </div>
+
+        <div class="landed">
+          <span class="k">Update · Jul</span>
+          <p>Living with him taught the sequel to that rule: <strong>right model, right moment.</strong> The 7B is
+            the sharp one, but he's 5&nbsp;GB on an 8&nbsp;GB phone — leaving him loaded for every dashboard refresh
+            pinned the whole box and the calls crawled to a timeout. So the routine background reads now run on the
+            fast 3B, and the 7B only wakes when I actually <em>summon</em> him for a deep look. One model in memory at
+            a time, never both — a strict hand-off, or the phone runs out of RAM and falls over. Same two models; the
+            fix was scheduling them.</p>
+        </div>
       </article>
 
       <div class="method reveal d2">
@@ -657,14 +667,16 @@
         <div class="node reveal d1">
           <span class="id">NODE · the-one</span>
           <span class="nm">The Brain</span>
-          <p class="ds">Old OnePlus 6T running Kali as an 8GB AI server — hosts the models and Home Assistant.</p>
+          <p class="ds">Old OnePlus 6T running Kali as an 8GB AI server — holds both models and hands off between
+            the fast 3B and the sharp 7B, one at a time so it never runs out of memory.</p>
           <span class="hw">OnePlus 6T · SD845</span>
           <span class="pill live">live</span>
         </div>
         <div class="node reveal d2">
           <span class="id">NODE · ragnar-pi4</span>
           <span class="nm">RaspyJack + Ragnar</span>
-          <p class="ds">Pentest framework with a local-AI tier I unlocked by moving it to a 4GB Pi.</p>
+          <p class="ds">Pentest framework with a local-AI tier I unlocked by moving it to a 4GB Pi — now also the
+            home server, running Home Assistant next to the lights.</p>
           <span class="hw">Raspberry Pi 4B</span>
           <span class="pill live">live</span>
         </div>
