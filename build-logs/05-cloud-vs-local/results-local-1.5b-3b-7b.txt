@@ -1,0 +1,83 @@
+
+============================================================
+# 1.5b (X1 CPU)
+============================================================
+cold load: 0.4s
+
+### factual | wall 1.6s | 15.0 tok/s | 12 tok
+SSH uses the default port 22 by default.
+
+### reasoning | wall 14.9s | 12.6 tok/s | 181 tok
+To determine which switch controls which bulb, follow these steps:
+
+1. Turn on all three switches.
+2. Leave one of the rooms for a moment without turning it off.
+3. Return to the other room where there are no bulbs lit but remember which switch you left unpowered.
+
+Now, touch each switch in sequence:
+- First, turn on and off the first switch (S1). After this, go back to the bulb room. One of the bulbs will be warm from S1.
+- Next, turn on and off the second switch (S2).
+- Finally, turn on and of
+
+### coding | wall 1.8s | 14.4 tok/s | 19 tok
+```bash
+find /var -type f -size +100M
+```
+
+### pentest | wall 38.2s | 12.2 tok/s | 447 tok
+The `nmap -sV` command performs a service version detection scan, which is part of the Nmap port scanner suite by Insecure Systems. This type of scan helps identify the operating system version and other software versions that are running on the target systems in your network.
+
+### What Does an nmap -sV Scan Do?
+An `nmap -sV` scan:
+
+1. **Identifies OS Versions**: It detects which operating system each host is using by probing for specific TCP ports, HTTP responses, DNS records, and more.
+2. **So
+
+============================================================
+# 3b (the-one)
+============================================================
+cold load: 1.3s
+
+### factual | wall 5.5s | 5.4 tok/s | 14 tok
+SSH (Secure Shell) uses port 22 by default.
+
+### reasoning | wall 32.5s | 4.9 tok/s | 129 tok
+To solve this problem, follow these steps:
+
+1. Turn on all three switches (Switch A, Switch B, and Switch C) for about a minute.
+2. After one minute, turn off Switch A and keep Switches B and C turned on.
+
+By following this sequence, you can determine which switch controls which bulb with just one entry into the bulb room:
+
+- The bulb that is ON belongs to Switch C (since it was the last one turned on).
+- The bulb that is HOT (warm) but not ON belongs to Switch B.
+- The remaining bulb, which mus
+
+### coding | wall 7.5s | 5.2 tok/s | 16 tok
+`find /var -type f -size +100M`
+
+### pentest | wall 44.1s | 4.8 tok/s | 187 tok
+An `nmap -sV` scan is used to actively try to determine the version information for any services that are found by initiating service-specific scans. This can help identify what software or protocols are in use without needing to guess. For example, if Nmap detects a port on which an HTTP server is running, it will attempt to find out if it's Apache 2.x, IIS, or another version of the same protocol.
+
+One risk associated with running `nmap -sV` (and any active scanning) on a network you do not ow
+
+============================================================
+# 7b (the-one)
+============================================================
+cold load: 27.9s
+
+### factual | wall 10.8s | 2.5 tok/s | 12 tok
+SSH uses port 22 by default for connections.
+
+### reasoning | wall 46.4s | 2.3 tok/s | 74 tok
+Flip two switches and wait for a while, then enter the bulb room. The bulb that is on is controlled by the switch that was flipped recently. The bulb that is off but warm indicates its switch was turned on and then off or never turned on. The remaining bulb, which is off and cold, is controlled by the other switch that was not warmed up.
+
+### coding | wall 16.6s | 2.4 tok/s | 19 tok
+```bash
+find /var -type f -size +100M
+```
+
+### pentest | wall 71.6s | 2.2 tok/s | 135 tok
+An `nmap -sV` scan uses the Network Mapper (Nmap) tool to perform a service version detection scan. This means it not only identifies open ports but also determines the software and its versions running on those ports. It helps in gathering information about the services that are available on target hosts.
+
+One risk of running an `nmap -sV` scan on a network you don't own is that it can be considered an unauthorized intrusion attempt. Engaging in such activities without explicit permission from 
