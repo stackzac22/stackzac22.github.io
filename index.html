@@ -650,6 +650,40 @@
       </div>
     </section>
 
+    <!-- BUILD LOG 05 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 05</span><h2>Cloud vs Local AI — measured on my own fleet</h2></div>
+      <p class="sec-note">Local AI isn't "worse cloud" — it's a different tool. So instead of guessing, I ran the
+        same four prompts across my whole local ladder and a frontier cloud model, and timed and graded every answer.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>1.5B, 3B, 7B on my own hardware — against cloud, on the same four prompts.</h3>
+            <p class="blurb">Factual, coding, a reasoning puzzle, and a pentest fact — timed wall-clock, graded
+              right or wrong. The 1.5B told me <code>nmap -sV</code> means "Script Version" with total confidence.
+              It doesn't; it's version detection.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>1.5b</b> · X1 (x86)</span>
+            <span class="chip"><b>3b / 7b</b> · the-one (ARM)</span>
+            <span class="chip"><b>cloud</b> · claude CLI</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The verdict</span>
+          <p>Easy tasks → the tiny model wins, it's fast and just as correct. Hard tasks → quality climbs with
+            size, and cloud was right on all four while the local models fumbled reasoning or invented facts.
+            <strong>Go cloud for the work that matters</strong> — code, pentest analysis, anything a wrong answer
+            costs you. Keep local for the always-on house voice, quick offline commands, and anything private.
+            Either way: <em>verify</em>, don't trust.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-05-cloud-vs-local.html" style="color:var(--accent-ink)">Read the full benchmark — every prompt, every timing →</a></p>
+    </section>
+
     <!-- FLEET GRID -->
     <section>
       <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>

@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Log 05 — Cloud vs Local AI, measured on my own fleet: 1.5B, 3B, and 7B models benchmarked against a frontier cloud model on real prompts.">
+<meta name="color-scheme" content="light dark">
+<title>Cloud vs Local AI, measured — GhostGrid Build Log 05</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --cloud:#3B9EFF; --cloud-soft:rgba(59,158,255,.12);
+    --local:#FF8A3D; --local-soft:rgba(255,138,61,.12);
+    --good:#35C46B; --bad:#E5484D;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+      --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+      --cloud:#1F7FD6; --cloud-soft:rgba(31,127,214,.09);
+      --local:#D96A22; --local-soft:rgba(217,106,34,.10);
+      --good:#1f9d55; --bad:#c93b40;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --cloud:#3B9EFF; --cloud-soft:rgba(59,158,255,.12);
+    --local:#FF8A3D; --local-soft:rgba(255,138,61,.12);
+    --good:#35C46B; --bad:#E5484D;
+  }
+  :root[data-theme="light"]{
+    --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+    --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+    --cloud:#1F7FD6; --cloud-soft:rgba(31,127,214,.09);
+    --local:#D96A22; --local-soft:rgba(217,106,34,.10);
+    --good:#1f9d55; --bad:#c93b40;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:960px;margin:0 auto;padding:clamp(1.2rem,4vw,3.5rem) clamp(1rem,4vw,2rem);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--fg-faint);}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(1.9rem,5.5vw,3.1rem);line-height:1.08;
+    margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em;}
+  h1 .c{color:var(--cloud)} h1 .l{color:var(--local)}
+  .lede{font-size:clamp(1.02rem,2.2vw,1.2rem);color:var(--fg-dim);max-width:60ch;margin:1.1rem 0 0;}
+  h2{font-family:var(--mono);font-weight:600;font-size:1.28rem;margin:0 0 .2rem;letter-spacing:-.01em;}
+  h2 .num{color:var(--fg-faint);font-weight:400;margin-right:.6rem;}
+  section{margin-top:clamp(2.4rem,6vw,4rem);}
+  .sub{color:var(--fg-dim);margin:.2rem 0 1.4rem;max-width:64ch;}
+  .rule{height:1px;background:var(--line);border:0;margin:0;}
+
+  /* verdict split hero */
+  .verdict{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:2rem;}
+  .verdict > div{background:var(--panel);padding:1.3rem 1.4rem;}
+  .verdict .tag{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:.5rem;}
+  .verdict .cloud .tag{color:var(--cloud)} .verdict .local .tag{color:var(--local)}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .verdict .cloud .dot{background:var(--cloud);box-shadow:0 0 10px var(--cloud)}
+  .verdict .local .dot{background:var(--local);box-shadow:0 0 10px var(--local)}
+  .verdict p{margin:.6rem 0 0;color:var(--fg-dim);font-size:.96rem}
+  .verdict strong{color:var(--fg);font-weight:600}
+
+  /* tables */
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:520px;}
+  caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);padding:0 0 .7rem;}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  thead th{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--fg-faint);font-weight:600;background:var(--panel-2);}
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--fg)}
+  .chip{font-family:var(--mono);font-size:.74rem;padding:.12rem .5rem;border-radius:999px;
+    display:inline-block;white-space:nowrap}
+  .chip.ok{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+  .chip.no{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+  .chip.warn{color:var(--local);background:color-mix(in srgb,var(--local) 16%,transparent)}
+
+  /* two-tone matrix */
+  .matrix{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .matrix .row{display:grid;grid-template-columns:minmax(120px,1fr) 1.4fr 1.4fr;gap:1px;background:var(--line)}
+  .matrix .row > div{background:var(--panel);padding:.85rem 1rem;font-size:.92rem}
+  .matrix .row .axis{font-family:var(--mono);font-size:.8rem;color:var(--fg-dim);display:flex;align-items:center}
+  .matrix .head > div{background:var(--panel-2);font-family:var(--mono);font-size:.74rem;
+    letter-spacing:.08em;text-transform:uppercase}
+  .matrix .head .cl{color:var(--cloud)} .matrix .head .lo{color:var(--local)}
+  .win{position:relative}
+  .win.cloud{box-shadow:inset 3px 0 0 var(--cloud)} .win.local{box-shadow:inset 3px 0 0 var(--local)}
+  .lead{color:var(--fg)} .lead .k{font-weight:600}
+
+  /* decision cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:.5rem}
+  .card{border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.2rem;background:var(--panel)}
+  .card.cl{border-top:3px solid var(--cloud)} .card.lo{border-top:3px solid var(--local)}
+  .card.hy{border-top:3px solid var(--good)}
+  .card h3{font-family:var(--mono);font-size:.95rem;margin:0 0 .5rem}
+  .card.cl h3{color:var(--cloud)} .card.lo h3{color:var(--local)} .card.hy h3{color:var(--good)}
+  .card ul{margin:.3rem 0 0;padding-left:1.1rem;color:var(--fg-dim);font-size:.9rem}
+  .card li{margin:.3rem 0}
+
+  .takeaway{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    padding:1.3rem 1.4rem;margin-top:2rem}
+  .takeaway p{margin:0;font-size:1.05rem}
+  .takeaway .big{font-family:var(--mono);color:var(--fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--fg) 8%,transparent);
+    padding:.08em .35em;border-radius:5px}
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.76rem;color:var(--fg-faint);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media (max-width:620px){
+    .verdict{grid-template-columns:1fr}
+    .matrix .row{grid-template-columns:1fr}
+    .matrix .head{display:none}
+    .matrix .row > div{padding:.7rem .9rem}
+    .matrix .row .axis{border-bottom:1px dashed var(--line)}
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">GhostGrid · Build Log 05 · 2026-07-17</p>
+  <h1><span class="c">Cloud</span> vs <span class="l">Local</span> AI,<br>measured on my own fleet</h1>
+  <p class="lede">Local AI isn't a worse cloud — it's a different tool. So I benchmarked
+    <em>my whole ladder</em> — 1.5B, 3B, 7B on my own hardware — against a frontier model
+    instead of guessing. Real timings, real answers, real failures. The house rule that came
+    out of it: <strong>AI is an accelerator, not an authority.</strong></p>
+
+  <div class="verdict">
+    <div class="cloud">
+      <span class="tag"><span class="dot"></span>Cloud = the ceiling</span>
+      <p>Frontier reasoning, few factual misses, effectively unlimited by your silicon —
+      but your prompt <strong>leaves the network</strong>, it costs per token, and it's
+      <strong>dead without internet</strong>.</p>
+    </div>
+    <div class="local">
+      <span class="tag"><span class="dot"></span>Local = the floor</span>
+      <p>Private, <strong>$0 per request</strong>, works with the internet down, fast on
+      small models — but capped by a CPU with no GPU, so it <strong>hallucinates on hard
+      questions</strong>.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2><span class="num">01</span>The box under test</h2>
+    <p class="sub">No cherry-picking. This is the actual hardware running the house voice
+      assistant, on the private link, no cloud in the loop.</p>
+    <div class="scroll">
+      <table>
+        <tbody>
+          <tr><td class="num" style="color:var(--local)">LOCAL</td><td>ThinkPad X1 Carbon — Intel i5-6200U, <strong>4 threads, no usable GPU</strong>, 7.6 GB RAM. Model <code>qwen2.5:1.5b</code> (1.0 GB) on Ollama, CPU inference. Whisper + Piper on a Pi over the private link.</td></tr>
+          <tr><td class="num" style="color:var(--cloud)">CLOUD</td><td>A hosted frontier model (Claude-class), <strong>measured live</strong> via the <code>claude</code> CLI on the same four prompts — see the caveat under the speed table about its ~7 s fixed startup cost.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Measured: 1.5B vs 3B vs 7B, four prompts</h2>
+    <p class="sub">Same four prompts across every local model — 1.5B on the X1 (x86),
+      3B and 7B on the-one (ARM, no GPU). Two tables: how fast, and who got it right.</p>
+
+    <div class="scroll">
+      <table>
+        <caption>Speed · wall-clock seconds per prompt (lower = faster)</caption>
+        <thead><tr><th>Prompt</th><th>1.5B · x86</th><th>3B · ARM</th><th>7B · ARM</th><th style="color:var(--cloud)">Cloud*</th></tr></thead>
+        <tbody>
+          <tr><td>Factual — SSH port</td><td class="num">1.6 s</td><td class="num">5.5 s</td><td class="num">10.8 s</td><td class="num" style="color:var(--cloud)">7.5 s</td></tr>
+          <tr><td>Coding — find one-liner</td><td class="num">1.8 s</td><td class="num">7.5 s</td><td class="num">16.6 s</td><td class="num" style="color:var(--cloud)">11.9 s</td></tr>
+          <tr><td>Reasoning — bulb puzzle</td><td class="num">14.9 s</td><td class="num">32.5 s</td><td class="num">46.4 s</td><td class="num" style="color:var(--cloud)">12.5 s</td></tr>
+          <tr><td>Pentest — nmap -sV</td><td class="num">38.2 s</td><td class="num">44.1 s</td><td class="num">71.6 s</td><td class="num" style="color:var(--cloud)">12.3 s</td></tr>
+          <tr><td>Cold load / throughput</td><td class="num">0.4 s · ~13 t/s</td><td class="num">1.3 s · ~5 t/s</td><td class="num">27.9 s · ~2.3 t/s</td><td class="num" style="color:var(--cloud)">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:.8rem;font-size:.85rem">*Cloud measured live via the
+      <code>claude</code> CLI, same prompts — but it carries a <strong>~7 s fixed startup
+      cost</strong> (a trivial one-liner took 7.5 s), so these are an <em>upper bound</em>;
+      a raw API call runs ~1–3 s. Generation itself is fast — the long pentest answer
+      (12.3 s) took about the same as the short factual one, so almost all of cloud's clock
+      is startup, not thinking.</p>
+
+    <div class="scroll" style="margin-top:1rem">
+      <table>
+        <caption>Quality · did it get the answer right?</caption>
+        <thead><tr><th>Prompt</th><th>1.5B</th><th>3B</th><th>7B</th><th>Cloud</th></tr></thead>
+        <tbody>
+          <tr><td>Factual</td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓</span></td></tr>
+          <tr><td>Coding</td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓</span></td></tr>
+          <tr><td>Reasoning puzzle</td><td><span class="chip no">✗ garbled</span></td><td><span class="chip warn">~ flawed</span></td><td><span class="chip ok">✓ heat trick</span></td><td><span class="chip ok">✓</span></td></tr>
+          <tr><td>Pentest fact</td><td><span class="chip no">✗ "OS detect"</span></td><td><span class="chip ok">✓</span></td><td><span class="chip ok">✓ + risk</span></td><td><span class="chip ok">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="sub" style="margin-top:1rem"><strong>Read it in one line:</strong> easy prompts —
+      every size is right, so the tiny fast 1.5B wins. Hard prompts — quality climbs with
+      size (the 1.5B called <code>nmap -sV</code> "OS detection," the 7B nailed it <em>and</em>
+      flagged the legal risk) but speed collapses inversely, and the <em>chip</em> matters as
+      much as the model: the 1.5B gave a <span style="color:var(--bad)">wrong</span> answer in
+      38 s while the 7B gave the <span style="color:var(--good)">right</span> one in 72 s on the
+      GPU-less ARM. That gap is the whole case for <em>verify, don't trust</em>.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Measured: the local voice path</h2>
+    <p class="sub">All the private link, zero cloud. The ears and voice are fast — end-to-end
+      latency is dominated by the brain, not the pipeline.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Stage</th><th>Engine · host</th><th>Latency</th></tr></thead>
+        <tbody>
+          <tr><td>Speech → text</td><td>Whisper · Pi (a local address)</td><td class="num">~2.8 s</td></tr>
+          <tr><td>Think</td><td>qwen2.5:1.5b · X1</td><td class="num">1–9 s</td></tr>
+          <tr><td>Text → speech</td><td>Piper · Pi (a local address)</td><td class="num">0.82 s to first audio</td></tr>
+          <tr><td>Bigger brain (7B on ARM)</td><td>on-demand only</td><td class="num">~39 s (72 s cold)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>The trade-off, straight</h2>
+    <p class="sub">Colored edge marks which side wins each axis.</p>
+    <div class="matrix">
+      <div class="row head"><div class="axis" style="color:var(--fg-faint)">Axis</div><div class="cl">Cloud</div><div class="lo">Local</div></div>
+      <div class="row"><div class="axis">Latency</div><div>~1–3 s, then fast streaming</div><div class="win local"><span class="lead">Low &amp; predictable on small models — <span class="k">no network hop</span></span></div></div>
+      <div class="row"><div class="axis">Accuracy</div><div class="win cloud"><span class="lead">Strong reasoning, <span class="k">few factual misses</span></span></div><div>Small models miss reasoning, invent facts</div></div>
+      <div class="row"><div class="axis">Cost</div><div>Per-token billing, scales with use</div><div class="win local"><span class="lead">Sunk hardware, <span class="k">$0 per request</span></span></div></div>
+      <div class="row"><div class="axis">Privacy</div><div>Prompt leaves your network</div><div class="win local"><span class="lead">Data <span class="k">never leaves the LAN</span></span></div></div>
+      <div class="row"><div class="axis">Offline</div><div>Dead without connectivity</div><div class="win local"><span class="lead">Runs with the <span class="k">internet down</span></span></div></div>
+      <div class="row"><div class="axis">Control</div><div>Limited to the API surface</div><div class="win local"><span class="lead">Full — model, prompt, wiring, LEDs, voice</span></div></div>
+      <div class="row"><div class="axis">Ceiling</div><div class="win cloud"><span class="lead">Effectively <span class="k">frontier-class</span></span></div><div>Capped by your silicon (no GPU = small only)</div></div>
+      <div class="row"><div class="axis">Uptime</div><div class="win cloud"><span class="lead">Someone else's problem</span></div><div>You own it — dead battery = dead brain</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>When to reach for which</h2>
+    <p class="sub">Mapped to what actually runs on the fleet.</p>
+    <div class="cards">
+      <div class="card lo">
+        <h3>Local first</h3>
+        <ul>
+          <li>Always-on house &amp; Mom voice</li>
+          <li>Quick commands, status checks</li>
+          <li>Offline / power-out resilience</li>
+          <li>Anything privacy-sensitive</li>
+          <li>Cheap, repetitive tasks</li>
+        </ul>
+      </div>
+      <div class="card cl">
+        <h3>Cloud when it's hard</h3>
+        <ul>
+          <li>Real reasoning &amp; planning</li>
+          <li>Code review you'll ship</li>
+          <li><strong>Correctness-critical</strong>: CVEs, exploit logic</li>
+          <li>Config you're about to run for real</li>
+        </ul>
+      </div>
+      <div class="card hy">
+        <h3>The GhostGrid pattern</h3>
+        <ul>
+          <li>Local-first for speed + privacy</li>
+          <li>Escalate to a bigger model on hard tasks</li>
+          <li><strong>Verify</strong> whatever comes back</li>
+          <li>Floor + ceiling, not either/or</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>The verdict: cloud-first for the work that matters</h2>
+    <p class="sub">After all the homelab pride, the honest call — don't let it talk you out
+      of the sharper tool.</p>
+    <div class="cards">
+      <div class="card cl">
+        <h3>Default to cloud when it counts</h3>
+        <ul>
+          <li>Learning, shipping code, pentest analysis</li>
+          <li>Anything a wrong answer costs you</li>
+          <li>Right on all four, fast, caught what local missed</li>
+          <li>A pro reaches for the sharpest tool — no guilt</li>
+        </ul>
+      </div>
+      <div class="card lo">
+        <h3>Keep local for what it's FOR</h3>
+        <ul>
+          <li>Always-on house &amp; Mom voice</li>
+          <li>Quick offline commands</li>
+          <li>Private stuff that shouldn't leave the LAN</li>
+          <li>Works when the grid's down</li>
+        </ul>
+      </div>
+      <div class="card hy">
+        <h3>The local build is the gym</h3>
+        <ul>
+          <li>You run it because doing it yourself is the skill</li>
+          <li>Worth more to the career than its answers</li>
+          <li>Owning the stack &gt; renting every brain cell</li>
+          <li>Either way — <strong>verify</strong></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="takeaway">
+    <p><span class="big">Point your brain at cloud when it counts; let local run the house
+    and the reps.</span> Use cloud without guilt for the real work, keep local because you
+    own it and it's teaching you — and either way, <em>verify</em>. The 1.5B told me
+    <code>-sV</code> means "OS detection" with a straight face. That's why the tool never
+    gets the final word.</p>
+  </div>
+
+  <footer>
+    <span>GhostGrid · stackzac22</span>
+    <span>Bench: 1.5b (X1 x86) · 3b/7b (the-one ARM) · cloud via claude CLI</span>
+  </footer>
+
+</div>
+
+<p style="text-align:center;margin:34px 0 44px;font-family:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace">
+  <a href="index.html" style="color:var(--cloud);text-decoration:none">&larr; back to the GhostGrid journal</a>
+</p>
+</body>
+</html>
