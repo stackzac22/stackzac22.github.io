@@ -650,6 +650,41 @@
       </div>
     </section>
 
+    <!-- BUILD LOG 04 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 04</span><h2>The wall that moved — GPU-accelerating Ragnar</h2></div>
+      <p class="sec-note">Ragnar's 7B model runs CPU-only on the phone it lives on, pegging all eight cores. The GPU
+        sits right there doing nothing — so I tried to hand it the work with Vulkan, and hit a wall worth writing up.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>Built llama.cpp from source with Vulkan on — and the model refused to even load.</h3>
+            <p class="blurb"><code>ggml_vulkan: device Vulkan0 does not support 16-bit storage.</code> Almost
+              filed it as "old GPU can't do it" — until the driver's own feature flags turned out to contradict
+              each other.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>Adreno 630</b> · GPU</span>
+            <span class="chip"><b>Mesa Turnip</b> · driver</span>
+            <span class="chip"><b>llama.cpp</b> · from source</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The twist</span>
+          <p>The extension query said 16-bit storage was supported (<code>true</code>); the core feature struct
+            llama.cpp actually checks said the opposite (<code>false</code>). Same chip, same driver — self-contradicting
+            flags. <strong>The wall wasn't the hardware, it was which driver you're running</strong>: the same Adreno
+            630 exposes fp16 fine through Android's proprietary driver, just not through Linux's open-source Turnip.
+            Ragnar stays on CPU for now — but "impossible" turned out to mean "impossible on this OS slot," a much
+            narrower and more interesting problem.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-04-gpu-vulkan-wall.html" style="color:var(--accent-ink)">Read the full wall — the clue, the error, the twist →</a></p>
+    </section>
+
     <!-- BUILD LOG 05 -->
     <section>
       <div class="sec-head"><span class="eyebrow">Build log · 05</span><h2>Cloud vs Local AI — measured on my own fleet</h2></div>

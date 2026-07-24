@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Log 04 — trying to GPU-accelerate a local voice assistant on a rooted phone with Vulkan, the wall I hit, and the twist: it wasn't the GPU, it was the driver.">
+<meta name="color-scheme" content="light dark">
+<title>The wall that moved — GhostGrid Build Log 04</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --gpu:#B98CFF; --gpu-soft:rgba(185,140,255,.12);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+      --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+      --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+      --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+      --gpu:#7a4fd1; --gpu-soft:rgba(122,79,209,.08);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --gpu:#B98CFF; --gpu-soft:rgba(185,140,255,.12);
+  }
+  :root[data-theme="light"]{
+    --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+    --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+    --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+    --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+    --gpu:#7a4fd1; --gpu-soft:rgba(122,79,209,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:900px;margin:0 auto;padding:clamp(1.2rem,4vw,3.5rem) clamp(1rem,4vw,2rem);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--fg-faint);}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(1.8rem,5vw,2.85rem);line-height:1.12;
+    margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em;}
+  h1 .w{color:var(--wall)}
+  .lede{font-size:clamp(1.02rem,2.2vw,1.2rem);color:var(--fg-dim);max-width:64ch;margin:1.1rem 0 0;}
+  h2{font-family:var(--mono);font-weight:600;font-size:1.24rem;margin:0 0 .2rem;letter-spacing:-.01em;}
+  h2 .num{color:var(--fg-faint);font-weight:400;margin-right:.6rem;}
+  section{margin-top:clamp(2.2rem,5.5vw,3.6rem);}
+  .sub{color:var(--fg-dim);margin:.2rem 0 1.2rem;max-width:66ch;}
+  p.body{color:var(--fg-dim);max-width:68ch;margin:.6rem 0 0}
+  p.body strong{color:var(--fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--fg) 8%,transparent);
+    padding:.08em .35em;border-radius:5px}
+
+  .stage{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+  .stage .dot{width:8px;height:8px;border-radius:50%}
+  .stage.clue{color:var(--clue)} .stage.clue .dot{background:var(--clue);box-shadow:0 0 10px var(--clue)}
+  .stage.wall{color:var(--wall)} .stage.wall .dot{background:var(--wall);box-shadow:0 0 10px var(--wall)}
+  .stage.twist{color:var(--gpu)} .stage.twist .dot{background:var(--gpu);box-shadow:0 0 10px var(--gpu)}
+
+  .errbox{border:1px solid var(--wall);border-left:3px solid var(--wall);border-radius:10px;
+    background:var(--wall-soft);padding:1rem 1.2rem;margin-top:1rem;font-family:var(--mono);
+    font-size:.86rem;color:var(--fg);overflow-x:auto}
+  .errbox .l{display:block;white-space:pre;color:var(--wall)}
+  .errbox .l + .l{margin-top:.3rem}
+
+  .flags{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:1.1rem}
+  .flags > div{background:var(--panel);padding:1rem 1.2rem}
+  .flags .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--fg-faint);display:block;margin-bottom:.4rem}
+  .flags .v{font-family:var(--mono);font-size:.95rem}
+  .flags .yes{color:var(--clue)} .flags .no{color:var(--wall)}
+  .flags p{margin:.5rem 0 0;color:var(--fg-dim);font-size:.85rem}
+
+  .path{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:1.1rem}
+  .path .row{display:grid;grid-template-columns:minmax(90px,140px) 1fr;gap:1px;background:var(--line)}
+  .path .row > div{background:var(--panel);padding:.85rem 1.1rem;font-size:.92rem}
+  .path .row .who{font-family:var(--mono);font-size:.8rem;display:flex;align-items:center;gap:.5rem}
+  .path .row.android .who{color:var(--clue)} .path .row.linux .who{color:var(--wall)}
+  .path .row .who .dot{width:7px;height:7px;border-radius:50%}
+  .path .row.android .who .dot{background:var(--clue)} .path .row.linux .who .dot{background:var(--wall)}
+  .path p{margin:0;color:var(--fg-dim)}
+  .path strong{color:var(--fg)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+  .chip{font-family:var(--mono);font-size:.78rem;padding:.3rem .7rem;border-radius:999px;
+    border:1px solid var(--line);color:var(--fg-dim);background:var(--panel)}
+
+  .takeaway{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    padding:1.3rem 1.4rem;margin-top:2rem}
+  .takeaway p{margin:0;font-size:1.03rem;color:var(--fg-dim)}
+  .takeaway .big{font-family:var(--mono);color:var(--fg);font-weight:600;display:block;margin-bottom:.5rem}
+
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.76rem;color:var(--fg-faint);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media (max-width:560px){
+    .flags{grid-template-columns:1fr}
+    .path .row{grid-template-columns:1fr}
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">GhostGrid · Build Log 04 · 2026-07-15</p>
+  <h1>Trying to GPU-accelerate Ragnar,<br>and the <span class="w">wall</span> I hit</h1>
+  <p class="lede">Ragnar's 7B model runs CPU-only on a rooted phone — it works, but it pegs all
+    eight cores and takes the better part of half a minute to warm up. The phone has a GPU
+    sitting right there, doing nothing. So: offload it to the GPU with <strong>Vulkan</strong>
+    and get a free speed-up. Here's the wall I hit, and the twist that moved it.</p>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>A good clue</div>
+    <h2><span class="num">01</span>The GPU was already lying to me</h2>
+    <p class="sub">Before touching anything, I checked what the phone's existing LLM runtime
+      thought about the GPU.</p>
+    <p class="body">Vulkan support was already switched on in the runtime — but it was
+      silently falling back to CPU. Its GPU detection only ever looked for an
+      <strong>NVIDIA</strong> card, which a phone obviously doesn't have, failed, and quietly
+      gave up. The actual Vulkan backend library was never even installed. So step one wasn't
+      "enable the GPU," it was "find out why it pretended the GPU didn't exist."</p>
+    <p class="body">Good news underneath that: the phone runs full Linux (Kali/NetHunter), and
+      the open-source GPU driver stack — <strong>Mesa's "Turnip" Vulkan driver</strong> — was
+      present and healthy. The GPU enumerated cleanly as <code>Turnip Adreno (TM) 630</code>.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Building the real thing</h2>
+    <p class="sub">Rather than fight the existing runtime's missing pieces, I built the
+      reference engine from source, on the phone itself, with the Vulkan backend turned on.</p>
+    <p class="body">That meant installing a compiler toolchain, the Vulkan dev headers, a
+      shader compiler, and the SPIR-V headers — then a long compile on an 8-core phone.
+      It built clean.</p>
+    <div class="chips">
+      <span class="chip">llama.cpp · from source</span>
+      <span class="chip">Vulkan dev headers</span>
+      <span class="chip">glslc</span>
+      <span class="chip">SPIR-V</span>
+      <span class="chip">8-core compile</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>The wall</div>
+    <h2><span class="num">03</span>It refused to even load</h2>
+    <p class="sub">Asked it to load the 7B model onto the GPU. It refused — the model wouldn't
+      load, let alone run faster.</p>
+    <div class="errbox">
+      <span class="l">ggml_vulkan: device Vulkan0 does not support 16-bit storage.</span>
+      <span class="l">error: failed to load model</span>
+    </div>
+    <p class="body">It was so insistent that just having the Vulkan backend <em>loaded</em>
+      broke the CPU path too, until I explicitly hid the GPU from it.</p>
+  </section>
+
+  <section>
+    <div class="stage twist"><span class="dot"></span>The twist</div>
+    <h2><span class="num">04</span>It's the driver, not the GPU</h2>
+    <p class="sub">Almost wrote this off as "old GPU can't do it." Then I actually read the
+      driver's own feature flags — and they contradicted themselves.</p>
+    <div class="flags">
+      <div>
+        <span class="k">Extension check</span>
+        <span class="v yes">VK_KHR_16bit_storage → true</span>
+        <p>The Turnip driver advertises 16-bit storage support through the Vulkan
+          <em>extension</em> query.</p>
+      </div>
+      <div>
+        <span class="k">Core feature struct</span>
+        <span class="v no">storageBuffer16BitAccess → false</span>
+        <p>But reports <strong>false</strong> in the core feature struct that llama.cpp
+          actually checks — so it sees "false" and bails.</p>
+      </div>
+    </div>
+    <p class="body" style="margin-top:1rem">That reframed the whole thing. The Adreno 630
+      isn't the wall. <strong>The wall is which driver you're running</strong> — the same
+      chip tells two different stories depending which side of the phone's OS split you ask
+      from:</p>
+    <div class="path">
+      <div class="row linux">
+        <div class="who"><span class="dot"></span>Linux · NetHunter/Kali</div>
+        <div><p>Where Ragnar lives. The GPU uses the open-source <strong>Mesa Turnip</strong>
+          driver — and on this chip, Turnip doesn't cleanly expose fp16 to apps.</p></div>
+      </div>
+      <div class="row android">
+        <div class="who"><span class="dot"></span>Android · same silicon</div>
+        <div><p>The exact same GPU, <strong>Qualcomm's proprietary driver</strong> — which
+          exposes fp16 properly. That's how phone-LLM apps that <em>do</em> use the GPU pull
+          it off: they run on Android, not the Linux side.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Where it stands</h2>
+    <p class="body"><strong>Ragnar stays on CPU for now</strong> — it was already working. But
+      "GPU is impossible on this phone" turned out to be wrong: it's "GPU is impossible <em>on
+      the driver my Linux slot uses</em>." The same phone has an Android slot with the
+      proprietary driver, worth testing as the place the GPU actually earns its keep. The
+      catch: the two slots don't run at once, so it's a real architecture question, not a
+      flick of a switch.</p>
+    <div class="chips">
+      <span class="chip">Vulkan / Mesa Turnip</span>
+      <span class="chip">Adreno 630</span>
+      <span class="chip">llama.cpp (from source)</span>
+      <span class="chip">GGUF</span>
+      <span class="chip">glslc / SPIR-V</span>
+      <span class="chip">Kali / NetHunter</span>
+      <span class="chip">ollama</span>
+    </div>
+  </section>
+
+  <div class="takeaway">
+    <p><span class="big">Believe the failure, question the reason.</span>When a driver's
+      feature flags disagree with each other, the wall moved from "hardware" to "driver" —
+      and that's a completely different set of doors. Filed under: walls worth hitting.
+      A negative result is still a result.</p>
+  </div>
+
+  <footer>
+    <span>GhostGrid · stackzac22</span>
+    <span>Phone: rooted OnePlus 6T (Adreno 630) · NetHunter/Kali</span>
+  </footer>
+
+</div>
+
+<p style="text-align:center;margin:34px 0 44px;font-family:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace">
+  <a href="index.html" style="color:var(--gpu);text-decoration:none">&larr; back to the GhostGrid journal</a>
+</p>
+</body>
+</html>
