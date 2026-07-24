@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Log 06 — WebGPU finally gives real hardware GPU acceleration in the browser. Measured against the CPU baseline from Build Log 05, and the result wasn't what I expected.">
+<meta name="color-scheme" content="light dark">
+<title>Real GPU, slower anyway — GhostGrid Build Log 06</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --gpu:#3B9EFF; --cpu:#FF8A3D;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+      --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+      --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+      --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+      --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+      --gpu:#1F7FD6; --cpu:#D96A22;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --gpu:#3B9EFF; --cpu:#FF8A3D;
+  }
+  :root[data-theme="light"]{
+    --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+    --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+    --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+    --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+    --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+    --gpu:#1F7FD6; --cpu:#D96A22;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:clamp(1.2rem,4vw,3.5rem) clamp(1rem,4vw,2rem);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--fg-faint);}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(1.8rem,5vw,2.85rem);line-height:1.12;
+    margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em;}
+  h1 .g{color:var(--gpu)}
+  .lede{font-size:clamp(1.02rem,2.2vw,1.2rem);color:var(--fg-dim);max-width:66ch;margin:1.1rem 0 0;}
+  h2{font-family:var(--mono);font-weight:600;font-size:1.24rem;margin:0 0 .2rem;letter-spacing:-.01em;}
+  h2 .num{color:var(--fg-faint);font-weight:400;margin-right:.6rem;}
+  section{margin-top:clamp(2.2rem,5.5vw,3.6rem);}
+  .sub{color:var(--fg-dim);margin:.2rem 0 1.2rem;max-width:66ch;}
+  p.body{color:var(--fg-dim);max-width:68ch;margin:.6rem 0 0}
+  p.body strong{color:var(--fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--fg) 8%,transparent);
+    padding:.08em .35em;border-radius:5px}
+
+  .stage{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+  .stage .dot{width:8px;height:8px;border-radius:50%}
+  .stage.clue{color:var(--clue)} .stage.clue .dot{background:var(--clue);box-shadow:0 0 10px var(--clue)}
+  .stage.wall{color:var(--wall)} .stage.wall .dot{background:var(--wall);box-shadow:0 0 10px var(--wall)}
+  .stage.twist{color:var(--twist)} .stage.twist .dot{background:var(--twist);box-shadow:0 0 10px var(--twist)}
+
+  .checkbox{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:1.1rem}
+  .checkbox .row{display:grid;grid-template-columns:minmax(160px,220px) 1fr;gap:1px;background:var(--line)}
+  .checkbox .row > div{background:var(--panel);padding:.85rem 1.1rem;font-size:.92rem}
+  .checkbox .row .k{font-family:var(--mono);font-size:.78rem;color:var(--fg-faint)}
+  .checkbox .row .v{font-family:var(--mono);font-size:.88rem}
+  .checkbox .row .yes{color:var(--clue)}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:1rem}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:560px}
+  caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);padding:.9rem 1rem 0}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--fg-faint);font-weight:600;background:var(--panel-2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--fg)}
+  th.gpu, td.gpu-c{color:var(--gpu)} th.cpu, td.cpu-c{color:var(--cpu)}
+  .chip{font-family:var(--mono);font-size:.74rem;padding:.12rem .5rem;border-radius:999px;display:inline-block}
+  .chip.ok{color:var(--clue);background:var(--clue-soft)}
+  .chip.no{color:var(--wall);background:var(--wall-soft)}
+
+  .takeaway{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    padding:1.3rem 1.4rem;margin-top:2rem}
+  .takeaway p{margin:0;font-size:1.03rem;color:var(--fg-dim)}
+  .takeaway .big{font-family:var(--mono);color:var(--fg);font-weight:600;display:block;margin-bottom:.5rem}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+  .tchip{font-family:var(--mono);font-size:.78rem;padding:.3rem .7rem;border-radius:999px;
+    border:1px solid var(--line);color:var(--fg-dim);background:var(--panel)}
+
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.76rem;color:var(--fg-faint);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media (max-width:560px){ .checkbox .row{grid-template-columns:1fr} }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">GhostGrid · Build Log 06 · 2026-07-24</p>
+  <h1>Real <span class="g">GPU</span> acceleration in the browser,<br>finally — and it lost to the CPU</h1>
+  <p class="lede">Build Log 04 hit a wall trying to GPU-accelerate a model natively on the phone: the
+    Linux-side driver lied about supporting 16-bit float. This week Chrome's WebGPU finally started
+    using real hardware on this laptop instead of falling back to software — including the exact
+    fp16 feature that wall was built on. So I pointed it at the browser AI assistant already living
+    in RaspyJack and measured it, live, against the CPU numbers from Build Log 05.</p>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>Confirmed, not assumed</div>
+    <h2><span class="num">01</span>Is it actually hardware this time?</h2>
+    <p class="sub">"WebGPU works" can quietly mean a software rasterizer (SwiftShader) pretending to be
+      a GPU. Checked properly before trusting any numbers off it.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">navigator.gpu.requestAdapter()</div><div class="v yes">succeeded — not null</div></div>
+      <div class="row"><div class="k">WebGL renderer string</div><div class="v">ANGLE (Intel, Mesa Intel(R) HD Graphics 520 (SKL GT2), OpenGL ES 3.2)</div></div>
+      <div class="row"><div class="k">Real GPU, not SwiftShader?</div><div class="v yes">yes — named Intel silicon, not a software renderer</div></div>
+      <div class="row"><div class="k">shader-f16 feature</div><div class="v yes">present</div></div>
+    </div>
+    <p class="body">That last line is the whole story of Build Log 04 in reverse. The Adreno 630's
+      Linux driver (Turnip) reported 16-bit storage as unsupported in the exact struct llama.cpp
+      checks, and the model wouldn't even load. Here, on x1's decade-old Intel HD 520, Chrome's
+      WebGPU backend reports <code>shader-f16: true</code> — for real, through the browser's own
+      path (ANGLE → Mesa), not the native Vulkan path that hit the wall.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>The live test</h2>
+    <p class="sub">Same model class as Build Log 05's CPU baseline — Qwen2.5-1.5B-Instruct — run
+      through RaspyJack's browser assistant (MLC WebLLM over WebGPU) on the same laptop. Two of the
+      same prompts, so the comparison is direct.</p>
+    <div class="scroll">
+      <table>
+        <caption>Wall time &amp; decode speed</caption>
+        <thead><tr><th>Prompt</th><th class="gpu">Browser · WebGPU</th><th class="cpu">CPU · Ollama (Log 05)</th></tr></thead>
+        <tbody>
+          <tr><td>Factual — SSH port</td><td class="num gpu-c">22.7 s · 3.48 tok/s decode</td><td class="num cpu-c">1.6 s · ~13 tok/s</td></tr>
+          <tr><td>Pentest — nmap -sV + risk</td><td class="num gpu-c">58.7 s · 3.68 tok/s decode</td><td class="num cpu-c">38.2 s · ~11.6 tok/s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll" style="margin-top:1rem">
+      <table>
+        <caption>Correct?</caption>
+        <thead><tr><th>Prompt</th><th class="gpu">Browser · WebGPU</th><th class="cpu">CPU · Ollama (Log 05)</th></tr></thead>
+        <tbody>
+          <tr><td>Factual — SSH port</td><td><span class="chip ok">✓ port 22</span></td><td><span class="chip ok">✓</span></td></tr>
+          <tr><td>Pentest — nmap -sV</td><td><span class="chip ok">✓ "version detection" + named the OPSEC risk</span></td><td><span class="chip no">✗ "Script Version"</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body" style="margin-top:1rem">Decode speed held at <strong>~3.5–3.7 tok/s across both
+      runs</strong> — not a one-off shader-compile penalty on the first generation, but the browser
+      path's actual steady state on this GPU. That's roughly a <strong>quarter</strong> of the CPU's
+      throughput on the same laptop.</p>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>The anticlimax</div>
+    <h2><span class="num">03</span>Real acceleration ≠ faster</h2>
+    <p class="body">It would be easy to call this a win because the harder problem — getting real
+      fp16-capable GPU compute in a browser at all — is solved. But the honest read of the numbers
+      is that <strong>the CPU is still faster on this hardware</strong>. Two likely reasons, not
+      mutually exclusive:</p>
+    <div class="chips">
+      <span class="tchip">HD 520 is a 2015 24-EU iGPU — weak even by integrated-graphics standards</span>
+      <span class="tchip">MLC's WebGPU compute kernels aren't as hand-tuned as llama.cpp's AVX2 CPU path</span>
+      <span class="tchip">browser sandboxing adds overhead native Vulkan wouldn't have</span>
+    </div>
+    <p class="body" style="margin-top:1rem">One caveat on the quality gap: the browser engine (MLC,
+      <code>q4f16_1</code>) and the CPU engine (Ollama, <code>Q4_K_M</code>) are different
+      quantizations of the same base model, not identical weights — so the nmap answer being right
+      here and wrong on CPU isn't proof the GPU makes it smarter. Could easily be quant or sampling.
+      The speed gap is the number to trust; the quality result is a data point, not a conclusion.</p>
+  </section>
+
+  <section>
+    <div class="stage twist"><span class="dot"></span>The actual next door</div>
+    <h2><span class="num">04</span>Where this might still win</h2>
+    <p class="body">x1's Intel HD 520 was never going to be the interesting test case — it's the
+      weakest GPU on the whole fleet. The genuinely open question is the one Build Log 04 already
+      pointed at: the OnePlus 6T's Adreno 630, running <strong>Android's Chrome</strong> instead of
+      Linux's Turnip driver. That's the side of the chip that exposes fp16 <em>properly</em>, per
+      the driver-flag contradiction that build log dug up. Same browser assistant, same WebGPU path,
+      a GPU that's actually modern instead of a decade-old laptop iGPU. That's the test that would
+      actually tell you whether browser WebGPU is a real escape hatch from the native Vulkan wall —
+      not just "does it run," but "does it run <em>fast</em>." Untested as of this log.</p>
+  </section>
+
+  <div class="takeaway">
+    <p><span class="big">A capability existing and a capability paying off are two different claims.</span>
+    WebGPU going from fake to real on this laptop is a genuine unlock — it's the same fp16 gate that
+    blocked native inference entirely on the phone. But "it runs" isn't "it's fast," and on this
+    particular iGPU the CPU still wins. The next real test isn't this laptop — it's the phone, on the
+    driver that was never the problem in the first place.</p>
+  </div>
+
+  <footer>
+    <span>GhostGrid · stackzac22</span>
+    <span>x1 · Intel HD 520 (Mesa/ANGLE) · MLC WebLLM · Qwen2.5-1.5B-Instruct</span>
+  </footer>
+
+</div>
+
+<p style="text-align:center;margin:34px 0 44px;font-family:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace">
+  <a href="index.html" style="color:var(--gpu);text-decoration:none">&larr; back to the GhostGrid journal</a>
+</p>
+</body>
+</html>

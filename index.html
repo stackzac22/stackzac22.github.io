@@ -719,6 +719,41 @@
       <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-05-cloud-vs-local.html" style="color:var(--accent-ink)">Read the full benchmark — every prompt, every timing →</a></p>
     </section>
 
+    <!-- BUILD LOG 06 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 06</span><h2>Real browser GPU, finally — and it lost to the CPU</h2></div>
+      <p class="sec-note">Build log 04's wall was a driver lying about fp16 support. This week WebGPU started using
+        real hardware in Chrome on this laptop — including that exact feature. So I measured it, live, against
+        the CPU numbers from build log 05 instead of assuming it would win.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>Confirmed real hardware, <code>shader-f16</code> and all — then decode speed came in at a quarter of the CPU's.</h3>
+            <p class="blurb">Same Qwen2.5-1.5B class model, same laptop, run through RaspyJack's browser AI
+              assistant over WebGPU. ~3.5–3.7 tok/s decode, steady across two prompts — versus ~13 tok/s CPU-only
+              via Ollama in build log 05.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>Intel HD 520</b> · iGPU</span>
+            <span class="chip"><b>WebGPU</b> · shader-f16</span>
+            <span class="chip"><b>MLC WebLLM</b> · browser</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The honest read</span>
+          <p>A capability existing and a capability paying off are two different claims. This laptop's iGPU is a
+            decade-old 24-EU chip — real WebGPU acceleration doesn't automatically mean fast, and here the CPU still
+            wins. The genuinely open test is the phone: the OnePlus 6T's Adreno 630 exposes fp16 properly through
+            Android's Chrome, unlike the Linux driver that blocked build log 04 natively. That comparison is still
+            untested.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-06-browser-gpu.html" style="color:var(--accent-ink)">Read the full test — the adapter check, both tables, the why →</a></p>
+    </section>
+
     <!-- FLEET GRID -->
     <section>
       <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>
