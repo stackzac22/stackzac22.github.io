@@ -754,6 +754,41 @@
       <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-06-browser-gpu.html" style="color:var(--accent-ink)">Read the full test — the adapter check, both tables, the why →</a></p>
     </section>
 
+    <!-- BUILD LOG 07 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 07</span><h2>The phone was supposed to change the answer. It didn't.</h2></div>
+      <p class="sec-note">Build log 06 ended on a promise: the real GPU test isn't a decade-old laptop iGPU, it's
+        the phone — a modern mobile GPU on Android's Chrome, the driver that exposes fp16 properly. This is that
+        test. The chip clears the exact fp16 bar the whole saga was built on, it runs real inference — and it still
+        loses to the phone's own CPU. And for once, the cloud number is measured, not estimated.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>Real <code>shader-f16</code> on the Mali GPU — and a 1.5B on it still generates slower than a 3B on the CPU.</h3>
+            <p class="blurb">WebLLM over WebGPU on the TCL 50 XL. GPU 1.5B at 1.28 tok/s, GPU 0.5B at 2.70 — versus
+              the phone's own CPU running a 3B at 2.3–2.8. Give the GPU the smaller model and it still can't get
+              ahead. Cloud, measured on-box for the first time: ~90–105 tok/s, 0.8 s to first token.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>Mali-G57</b> · Valhall</span>
+            <span class="chip"><b>WebGPU</b> · shader-f16 YES</span>
+            <span class="chip"><b>Cloud</b> · ~100 tok/s</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The honest read</span>
+          <p>The fp16 wall that ended build log 04 is genuinely gone on the phone — and with it gone, the GPU
+            still loses. That closes the GPU-acceleration thread with a number instead of a guess: local inference
+            stays on the CPU, the Mali WebGPU path is a working curiosity, and when raw speed is the goal, cloud is
+            40–80× faster — with the privacy bill attached.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-07-phone-gpu-loses.html" style="color:var(--accent-ink)">Read the full bench — four ways measured, GPU to cloud →</a></p>
+    </section>
+
     <!-- FLEET GRID -->
     <section>
       <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>
