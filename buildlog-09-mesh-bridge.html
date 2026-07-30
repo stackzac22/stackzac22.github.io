@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Log 09 — a mesh radio with a dark screen and no pairing number looked like dead hardware. It was the wrong firmware build. Then the fixed node got a private channel, an internet bridge, and taught me what a bridge is not.">
+<meta name="color-scheme" content="light dark">
+<title>The screen wasn't broken — GhostGrid Build Log 09</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --node:#3B9EFF; --rescue:#FF8A3D; --ladder:#E0A33E; --ladder-soft:rgba(224,163,62,.14);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+      --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+      --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+      --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+      --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+      --node:#1F7FD6; --rescue:#D96A22; --ladder:#B07818; --ladder-soft:rgba(176,120,24,.10);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --node:#3B9EFF; --rescue:#FF8A3D; --ladder:#E0A33E; --ladder-soft:rgba(224,163,62,.14);
+  }
+  :root[data-theme="light"]{
+    --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+    --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+    --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+    --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+    --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+    --node:#1F7FD6; --rescue:#D96A22; --ladder:#B07818; --ladder-soft:rgba(176,120,24,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:clamp(1.2rem,4vw,3.5rem) clamp(1rem,4vw,2rem);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--fg-faint);}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(1.8rem,5vw,2.85rem);line-height:1.12;
+    margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em;}
+  h1 .g{color:var(--node)}
+  .lede{font-size:clamp(1.02rem,2.2vw,1.2rem);color:var(--fg-dim);max-width:66ch;margin:1.1rem 0 0;}
+  h2{font-family:var(--mono);font-weight:600;font-size:1.24rem;margin:0 0 .2rem;letter-spacing:-.01em;}
+  h2 .num{color:var(--fg-faint);font-weight:400;margin-right:.6rem;}
+  section{margin-top:clamp(2.2rem,5.5vw,3.6rem);}
+  .sub{color:var(--fg-dim);margin:.2rem 0 1.2rem;max-width:66ch;}
+  p.body{color:var(--fg-dim);max-width:68ch;margin:.6rem 0 0}
+  p.body strong{color:var(--fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--fg) 8%,transparent);
+    padding:.08em .35em;border-radius:5px}
+
+  .stage{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+  .stage .dot{width:8px;height:8px;border-radius:50%}
+  .stage.clue{color:var(--clue)} .stage.clue .dot{background:var(--clue);box-shadow:0 0 10px var(--clue)}
+  .stage.wall{color:var(--wall)} .stage.wall .dot{background:var(--wall);box-shadow:0 0 10px var(--wall)}
+  .stage.twist{color:var(--twist)} .stage.twist .dot{background:var(--twist);box-shadow:0 0 10px var(--twist)}
+
+  .checkbox{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:1.1rem}
+  .checkbox .row{display:grid;grid-template-columns:minmax(160px,240px) 1fr;gap:1px;background:var(--line)}
+  .checkbox .row > div{background:var(--panel);padding:.85rem 1.1rem;font-size:.92rem}
+  .checkbox .row .k{font-family:var(--mono);font-size:.78rem;color:var(--fg-faint)}
+  .checkbox .row .v{font-family:var(--mono);font-size:.88rem}
+  .checkbox .row .yes{color:var(--clue)}
+  .checkbox .row .no{color:var(--wall)}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:1rem}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:560px}
+  caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);padding:.9rem 1rem 0}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--fg-faint);font-weight:600;background:var(--panel-2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--fg)}
+  td.t{font-family:var(--mono);color:var(--fg-faint);white-space:nowrap}
+  td.node-c{color:var(--node)} td.rescue-c{color:var(--rescue)} td.ladder-c{color:var(--ladder)}
+  tr.win td{background:var(--ladder-soft)}
+  .chip{font-family:var(--mono);font-size:.74rem;padding:.12rem .5rem;border-radius:999px;display:inline-block}
+  .chip.ok{color:var(--clue);background:var(--clue-soft)}
+  .chip.no{color:var(--wall);background:var(--wall-soft)}
+
+  pre{font-family:var(--mono);font-size:.83rem;line-height:1.55;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;overflow-x:auto;
+    margin-top:1rem;color:var(--fg-dim)}
+  pre .c{color:var(--fg-faint)}
+
+  .takeaway{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    padding:1.3rem 1.4rem;margin-top:2rem}
+  .takeaway p{margin:0;font-size:1.03rem;color:var(--fg-dim)}
+  .takeaway .big{font-family:var(--mono);color:var(--fg);font-weight:600;display:block;margin-bottom:.5rem}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+  .tchip{font-family:var(--mono);font-size:.78rem;padding:.3rem .7rem;border-radius:999px;
+    border:1px solid var(--line);color:var(--fg-dim);background:var(--panel)}
+
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.76rem;color:var(--fg-faint);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media (max-width:560px){ .checkbox .row{grid-template-columns:1fr} }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">GhostGrid · Build Log 09 · 2026-07-29</p>
+  <h1>The screen wasn't broken —<br>the <span class="g">build</span> was</h1>
+  <p class="lede">A mesh radio came up with a dark screen and never showed the pairing number the phone app
+    was waiting for. Every symptom pointed at a dead display: right board, right cable, right port, nothing
+    on the panel. The display was fine. I had flashed it as a different product — one whose defining feature
+    is not having a screen. Fixing that unlocked the rest of the night: a private channel to a friend's node,
+    an internet bridge, and a clear lesson about what a bridge is not.</p>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>The symptom pointed at hardware</div>
+    <h2><span class="num">01</span>A radio that wouldn't say its number</h2>
+    <p class="sub">Pairing a mesh node to the phone app is a two-way handshake: the app asks to connect, the
+      node prints a six-digit number on its own screen, you type it in. No screen, no number. No number, no
+      pairing.</p>
+    <p class="body">The board enumerated cleanly over USB, took a flash without complaint, and answered on
+      the serial console. So it wasn't dead, wasn't a cable, wasn't a port. It just never lit the panel — and
+      because the panel is the only place the pairing number can appear, a working radio was completely
+      unreachable from the app. The obvious read was a failed display or a bad solder joint on a cheap
+      board, and I nearly went looking for one.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">USB enumeration</div><div class="v yes">clean — serial bridge present</div></div>
+      <div class="row"><div class="k">flash + reboot</div><div class="v yes">succeeds, console responds</div></div>
+      <div class="row"><div class="k">OLED panel</div><div class="v no">dark, every boot</div></div>
+      <div class="row"><div class="k">BLE pairing PIN</div><div class="v no">nowhere to display it → can't pair</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>Two products, one build target</div>
+    <h2><span class="num">02</span>I flashed the version without a screen</h2>
+    <p class="sub">The firmware project no longer ships a standalone build for this exact board. What it
+      ships is two builds for the same chip family — and one of them is for the variant that has no display
+      at all.</p>
+    <p class="body">The sibling product is the <strong>Lite</strong>: same processor, same radio, same
+      footprint, no OLED. Its build therefore contains no display driver, because on the hardware it targets
+      there is nothing to drive. Flash it onto a board that <em>does</em> have a panel and you get precisely
+      what I got — a fully functional radio, correctly running, that never initialises the screen. The board
+      was reporting itself as the Lite because I had, in every sense that matters, told it that it was one.</p>
+    <p class="body" style="margin-top:1rem">This is the part I want to keep. Nothing in the failure looked
+      like a software choice. A dark panel reads as electrical, and I had already started reasoning about
+      hardware faults before I thought to ask what the running firmware believed it was. The board answered
+      that question the moment I asked it directly — the device identity was right there in the boot banner,
+      and it was the wrong product name.</p>
+    <div class="scroll">
+      <table>
+        <caption>Two builds, one chip family</caption>
+        <thead><tr><th>Build target</th><th>Intended hardware</th><th>Display driver</th><th>Result on my board</th></tr></thead>
+        <tbody>
+          <tr><td class="t">wsl-v3</td><td>Wireless Stick <strong>Lite</strong> — no panel</td><td><span class="chip no">absent</span></td><td>radio works, screen never lights</td></tr>
+          <tr class="win"><td class="t">v3</td><td>screened variant</td><td><span class="chip ok">present</span></td><td>panel on, pairing number shows</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body" style="margin-top:1rem">The fix is an erase and a clean write of the factory image for
+      the screened target. Worth knowing before you do it: <strong>a full erase takes the configuration with
+      it</strong>. Channels, region, module settings — all of it. I had that scripted, so it cost a minute;
+      unscripted it would have cost the evening, and I would have been re-entering settings I only half
+      remembered.</p>
+    <pre><span class="c"># erase first — a plain overwrite can leave stale config behind</span>
+esptool --chip esp32s3 --port /dev/ttyUSB0 --baud 460800 erase-flash
+esptool --chip esp32s3 --port /dev/ttyUSB0 --baud 460800 \
+        write-flash -z 0x0 firmware-&lt;screened-target&gt;-&lt;version&gt;.factory.bin
+
+<span class="c"># then re-apply config — the erase wiped it</span>
+./configure-node.sh /dev/ttyUSB0</pre>
+    <p class="body" style="margin-top:1rem">It booted as the right product, the panel came up, and the
+      pairing number appeared the instant the app asked for it. One note for anyone matching symptoms: the
+      physical panel on this board is a small one, so the interface renders into the top region rather than
+      filling the glass. That's correct behaviour, not a second bug — I checked, because by then I didn't
+      trust anything.</p>
+    <div class="chips">
+      <span class="tchip">"right board" is not the same as "right build"</span>
+      <span class="tchip">ask the firmware what it thinks it is before suspecting the solder</span>
+      <span class="tchip">a missing driver looks exactly like dead hardware</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>The thing I'd been burned by before</div>
+    <h2><span class="num">03</span>A private channel, written down first</h2>
+    <p class="sub">With the node pairing again I set up what it was bought for: a private encrypted channel
+      shared with a friend's node, so the two of us have a link that doesn't depend on anyone's cell network.</p>
+    <p class="body">The channel is a name plus a key. Anyone holding the key can read the traffic, which
+      makes it exactly as private as your handling of it — so it lives in a local-only repository that has
+      no remote and is never pushed anywhere, and it reaches my friend as a QR code they scan once. It is
+      not in this post, and it will not be in any post.</p>
+    <p class="body" style="margin-top:1rem">The reason I was careful is that I'd already made the opposite
+      mistake. I handed a node to a friend once <em>without</em> recording its channel anywhere, and when I
+      went looking months later there was nothing to find — I searched every log I keep and turned up a
+      single commented-out example line. That node and I had no shared channel at all, and no way to make
+      one remotely. Setup you don't write down isn't setup; it's a thing you'll do again from scratch, later,
+      without the device in your hand.</p>
+    <p class="body" style="margin-top:1rem">So this one got the full treatment: key recorded locally,
+      QR generated, and a one-page joining sheet written for a person who does not run Linux and should not
+      have to. The sheet uses the "add" path rather than "replace" deliberately, so joining my channel
+      doesn't wipe the default one their node already talks on.</p>
+  </section>
+
+  <section>
+    <div class="stage twist"><span class="dot"></span>A bridge is not an antenna</div>
+    <h2><span class="num">04</span>What the internet bridge actually bought</h2>
+    <p class="sub">The node can also relay its mesh traffic to an internet broker, in both directions. I
+      turned that on for the private channel. It is genuinely useful and it does not do the thing I initially
+      assumed it did.</p>
+    <p class="body">What it buys: anything the node hears on the mesh can leave the mesh, and anything sent
+      to the broker can come back down onto it. That's remote monitoring, and it's the path for alerts and
+      telemetry from the rest of the grid — a motion trip, a battery level, a status ping. What it does not
+      buy is <strong>range</strong>. Two radios still have to be in radio reach of each other to talk
+      directly. The bridge extends where the <em>data</em> can go, not where the <em>radio</em> can reach,
+      and I spent a few minutes genuinely confused about why a friend's node still wasn't appearing before
+      that distinction landed.</p>
+    <p class="body" style="margin-top:1rem">It also cost something I didn't expect. This chip has
+      <strong>one radio for both Wi-Fi and Bluetooth</strong>, and turning Wi-Fi on to reach the broker
+      turned Bluetooth off. The pairing number I had just spent the evening recovering became irrelevant,
+      because the node no longer speaks Bluetooth at all. It's now managed over USB or over the network
+      instead. That's a fine trade for a node that sits on a shelf — but if this were a device I carried
+      and configured from my phone, enabling the bridge would have quietly taken away the only way I
+      manage it.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">bridge uplink + downlink</div><div class="v yes">on, private channel only</div></div>
+      <div class="row"><div class="k">carries</div><div class="v">alerts + telemetry — text-sized payloads</div></div>
+      <div class="row"><div class="k">does not carry</div><div class="v no">images — the radio link is far too narrow</div></div>
+      <div class="row"><div class="k">extends range</div><div class="v no">no — data reach, not radio reach</div></div>
+      <div class="row"><div class="k">side effect</div><div class="v no">Wi-Fi on → Bluetooth off (one radio, shared)</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Honesty notes</h2>
+    <p class="body">Three, because this one ends less finished than it sounds.</p>
+    <p class="body" style="margin-top:1rem"><strong>The link is built but unproven.</strong> My side is
+      configured, keyed, and bridged. The friend's node is out of radio range and they can't easily do their
+      half of the setup, so not one message has crossed this channel yet. What I've actually verified is that
+      my end is correct and reproducible — not that the two nodes can talk.</p>
+    <p class="body" style="margin-top:1rem"><strong>The node can't join my private network.</strong> It's a
+      microcontroller; the mesh VPN the rest of the fleet lives on has no client for it. Reaching it from
+      outside the house means routing to it through something that <em>can</em> run one, or a jump host.
+      That's not a problem for the mesh itself — the broker is on the public internet — but it does mean this
+      node sits outside the tidy story the rest of the fleet tells.</p>
+    <p class="body" style="margin-top:1rem"><strong>I flashed the wrong build in the first place because I
+      trusted a name.</strong> The two targets differ by a few characters and both look plausible for the
+      board in your hand. I didn't check what the second one meant. Nothing about the failure that followed
+      would have led me back to that choice on its own, which is the whole reason it's worth writing down.</p>
+  </section>
+
+  <div class="takeaway">
+    <p><span class="big">A missing driver and dead hardware produce identical symptoms — and only one of them is visible from the boot banner.</span>
+    The screen was never broken. I had flashed the board as its screenless sibling, so the firmware simply
+    had no display code in it, and every downstream symptom — dark panel, no pairing number, unreachable from
+    the app — followed from that one wrong choice made in a menu, minutes earlier. Ten seconds reading what
+    the device said it was would have skipped the entire hardware theory. The same evening's other lesson
+    rhymes with it: a bridge moves your data somewhere new, it does not move your radio, and the difference
+    only becomes obvious when you're staring at a node that still isn't there.</p>
+  </div>
+
+  <footer>
+    <span>GhostGrid · stackzac22</span>
+    <span>ESP32-S3 mesh node · wrong build target → dark OLED · private channel + MQTT bridge · link unproven</span>
+  </footer>
+
+</div>
+
+<p style="text-align:center;margin:34px 0 44px;font-family:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace">
+  <a href="index.html" style="color:var(--node);text-decoration:none">&larr; back to the GhostGrid journal</a>
+</p>
+</body>
+</html>

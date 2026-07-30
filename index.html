@@ -789,6 +789,79 @@
       <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-07-phone-gpu-loses.html" style="color:var(--accent-ink)">Read the full bench — four ways measured, GPU to cloud →</a></p>
     </section>
 
+    <!-- BUILD LOG 08 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 08</span><h2>Two self-healing systems fought, and the reboot won.</h2></div>
+      <p class="sec-note">A node kept rebooting itself. There was an obvious culprit in the logs — a Wi-Fi crash on
+        the hub upstream, timestamped minutes before every incident. I wrote that down, believed it for a day, and
+        it was wrong. The crash was the trigger. The cause was the node's own rescue mode, and underneath it a
+        recovery ladder whose every rung had never once worked.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>A one-second outage cannot produce a 29-minute gap — the arithmetic broke my own explanation.</h3>
+            <p class="blurb">Rescue mode did the sensible field thing and raised its own access point when the
+              network vanished — using the single radio the node needs to <em>be</em> on the network. From that
+              instant it couldn't rejoin the thing it was trying to rejoin. Then the recovery ladder escalated
+              through four rungs that had been silently failing since the log's first line, and hit the fifth:
+              reboot.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>8</b> upstream crashes</span>
+            <span class="chip"><b>48</b> failed recoveries</span>
+            <span class="chip"><b>4</b> reboots</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The honest read</span>
+          <p>Neither system was buggy in isolation — both recovered exactly as designed. Put them on one radio with
+            no shared notion of who owns it and they produce a reboot loop that reads, in the logs, as an upstream
+            hardware fault. A last resort that always works is very good at hiding the fact that nothing before it
+            does.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-08-selfheal-standoff.html" style="color:var(--accent-ink)">Read the full teardown — the timeline, the ladder, the fix →</a></p>
+    </section>
+
+    <!-- BUILD LOG 09 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 09</span><h2>The screen wasn't broken. The build was.</h2></div>
+      <p class="sec-note">A mesh radio came up with a dark screen and never showed the pairing number the phone app
+        was waiting for. Right board, right cable, right port, nothing on the panel — so I started reasoning about
+        dead hardware. The display was fine. I'd flashed it as a different product: the sibling variant whose
+        defining feature is not having a screen.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>A missing driver and dead hardware produce identical symptoms — and only one is visible from the boot banner.</h3>
+            <p class="blurb">The screenless build contains no display code, because on the hardware it targets there's
+              nothing to drive. Flash it onto a board that <em>does</em> have a panel and you get a perfectly working
+              radio that can never show its pairing number — and is therefore unreachable from the app. Erase, write
+              the right target, re-apply config: panel on, PIN shows.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>ESP32-S3</b> mesh node</span>
+            <span class="chip"><b>Wrong target</b> · no OLED driver</span>
+            <span class="chip"><b>Bridge</b> · uplink + downlink</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The honest read</span>
+          <p>Same night's second lesson rhymes: an internet bridge moves your <em>data</em> somewhere new, it does not
+            move your <em>radio</em> — two nodes still have to be in radio reach to talk. And turning Wi-Fi on to
+            reach the broker turned Bluetooth off, because it's one shared radio. The channel to my friend's node is
+            built, keyed and bridged; not one message has crossed it yet.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-09-mesh-bridge.html" style="color:var(--accent-ink)">Read the full log — the two build targets, the channel, the bridge →</a></p>
+    </section>
+
     <!-- FLEET GRID -->
     <section>
       <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>

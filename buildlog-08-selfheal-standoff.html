@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Log 08 — a node kept rebooting itself. The upstream Wi-Fi crash everyone blamed was only the trigger. The cause was the node's own rescue mode, and a recovery script whose every rung had never worked.">
+<meta name="color-scheme" content="light dark">
+<title>Two self-healing systems fought — GhostGrid Build Log 08</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --node:#3B9EFF; --rescue:#FF8A3D; --ladder:#E0A33E; --ladder-soft:rgba(224,163,62,.14);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+      --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+      --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+      --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+      --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+      --node:#1F7FD6; --rescue:#D96A22; --ladder:#B07818; --ladder-soft:rgba(176,120,24,.10);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --node:#3B9EFF; --rescue:#FF8A3D; --ladder:#E0A33E; --ladder-soft:rgba(224,163,62,.14);
+  }
+  :root[data-theme="light"]{
+    --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+    --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+    --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+    --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+    --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+    --node:#1F7FD6; --rescue:#D96A22; --ladder:#B07818; --ladder-soft:rgba(176,120,24,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:clamp(1.2rem,4vw,3.5rem) clamp(1rem,4vw,2rem);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--fg-faint);}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(1.8rem,5vw,2.85rem);line-height:1.12;
+    margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em;}
+  h1 .g{color:var(--node)}
+  .lede{font-size:clamp(1.02rem,2.2vw,1.2rem);color:var(--fg-dim);max-width:66ch;margin:1.1rem 0 0;}
+  h2{font-family:var(--mono);font-weight:600;font-size:1.24rem;margin:0 0 .2rem;letter-spacing:-.01em;}
+  h2 .num{color:var(--fg-faint);font-weight:400;margin-right:.6rem;}
+  section{margin-top:clamp(2.2rem,5.5vw,3.6rem);}
+  .sub{color:var(--fg-dim);margin:.2rem 0 1.2rem;max-width:66ch;}
+  p.body{color:var(--fg-dim);max-width:68ch;margin:.6rem 0 0}
+  p.body strong{color:var(--fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--fg) 8%,transparent);
+    padding:.08em .35em;border-radius:5px}
+
+  .stage{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+  .stage .dot{width:8px;height:8px;border-radius:50%}
+  .stage.clue{color:var(--clue)} .stage.clue .dot{background:var(--clue);box-shadow:0 0 10px var(--clue)}
+  .stage.wall{color:var(--wall)} .stage.wall .dot{background:var(--wall);box-shadow:0 0 10px var(--wall)}
+  .stage.twist{color:var(--twist)} .stage.twist .dot{background:var(--twist);box-shadow:0 0 10px var(--twist)}
+
+  .checkbox{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:1.1rem}
+  .checkbox .row{display:grid;grid-template-columns:minmax(160px,240px) 1fr;gap:1px;background:var(--line)}
+  .checkbox .row > div{background:var(--panel);padding:.85rem 1.1rem;font-size:.92rem}
+  .checkbox .row .k{font-family:var(--mono);font-size:.78rem;color:var(--fg-faint)}
+  .checkbox .row .v{font-family:var(--mono);font-size:.88rem}
+  .checkbox .row .yes{color:var(--clue)}
+  .checkbox .row .no{color:var(--wall)}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:1rem}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:560px}
+  caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);padding:.9rem 1rem 0}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--fg-faint);font-weight:600;background:var(--panel-2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--fg)}
+  td.t{font-family:var(--mono);color:var(--fg-faint);white-space:nowrap}
+  td.node-c{color:var(--node)} td.rescue-c{color:var(--rescue)} td.ladder-c{color:var(--ladder)}
+  tr.win td{background:var(--ladder-soft)}
+  .chip{font-family:var(--mono);font-size:.74rem;padding:.12rem .5rem;border-radius:999px;display:inline-block}
+  .chip.ok{color:var(--clue);background:var(--clue-soft)}
+  .chip.no{color:var(--wall);background:var(--wall-soft)}
+
+  .takeaway{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    padding:1.3rem 1.4rem;margin-top:2rem}
+  .takeaway p{margin:0;font-size:1.03rem;color:var(--fg-dim)}
+  .takeaway .big{font-family:var(--mono);color:var(--fg);font-weight:600;display:block;margin-bottom:.5rem}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+  .tchip{font-family:var(--mono);font-size:.78rem;padding:.3rem .7rem;border-radius:999px;
+    border:1px solid var(--line);color:var(--fg-dim);background:var(--panel)}
+
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.76rem;color:var(--fg-faint);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media (max-width:560px){ .checkbox .row{grid-template-columns:1fr} }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">GhostGrid · Build Log 08 · 2026-07-29</p>
+  <h1>Two self-healing systems fought —<br>and the <span class="g">reboot</span> won</h1>
+  <p class="lede">One node on the fleet kept rebooting itself. There was an obvious culprit sitting right
+    there in the logs: a Wi-Fi crash on the hub upstream, timestamped minutes before every incident. That
+    explanation was written down, believed for a day, and was wrong. The crash was the trigger. The cause
+    was the node's own rescue mode — and underneath it, a recovery script whose every rung had never once
+    worked, hidden because its last resort always did.</p>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>The trigger is not the cause</div>
+    <h2><span class="num">01</span>A crash that only lasted a second</h2>
+    <p class="sub">The upstream fault is real and it fired eight times in one day — eight crashes, eight
+      malformed management frames, a perfect one-to-one match. It briefly drops the hub's access point.
+      Yesterday's conclusion stopped there.</p>
+    <p class="body">The problem with that story is arithmetic. A mitigation added the day before restarts
+      the crashed service in about a second, so the access point was never gone for more than a moment.
+      The node, meanwhile, was unreachable for <strong>29 minutes</strong> before it rebooted itself.
+      Something had to be holding that gap open, and it wasn't upstream.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">upstream crashes</div><div class="v">8 in one day, 1:1 with 8 malformed frames</div></div>
+      <div class="row"><div class="k">outage per crash</div><div class="v yes">~1 second — mitigation working</div></div>
+      <div class="row"><div class="k">node unreachable</div><div class="v no">29 minutes, then self-reboot</div></div>
+      <div class="row"><div class="k">verdict</div><div class="v">trigger upstream, cause local</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>The rescue ate the thing it was rescuing</div>
+    <h2><span class="num">02</span>Rescue mode took the uplink radio</h2>
+    <p class="sub">The node runs a monitoring loop that watches its own connectivity. Lose the network for
+      long enough and it does the sensible field thing: raise its own access point so a human with a phone
+      can still walk up and reach it. Sensible — on a box in a bag.</p>
+    <p class="body">This box is not in a bag. It's a permanently-powered node whose whole job depends on
+      staying joined to the fleet's private network, and it has exactly one radio doing that. When rescue
+      mode fired, it took <strong>that</strong> radio, marked it unmanaged, and turned it into an access
+      point. From that instant the node was no longer a client of anything. It could not rejoin the
+      network it was trying to rejoin, because the hardware it would have used was busy being the rescue.</p>
+    <div class="scroll">
+      <table>
+        <caption>How 29 minutes of nothing gets built</caption>
+        <thead><tr><th>Elapsed</th><th>What happened</th><th>Who did it</th></tr></thead>
+        <tbody>
+          <tr><td class="t">0:00</td><td>upstream Wi-Fi service crashes, access point blinks out</td><td class="node-c">hub</td></tr>
+          <tr><td class="t">+0:01</td><td>mitigation restarts it — access point is back</td><td class="node-c">hub</td></tr>
+          <tr><td class="t">+2:40</td><td>keepalive notices, correctly diagnoses "the AP is down upstream", holds</td><td class="ladder-c">keepalive</td></tr>
+          <tr class="win"><td class="t">+3:10</td><td><strong>rescue mode converts the uplink radio into an access point</strong></td><td class="rescue-c">monitor loop</td></tr>
+          <tr><td class="t">+5:40</td><td>keepalive escalates — but every rung is now a no-op</td><td class="ladder-c">keepalive</td></tr>
+          <tr><td class="t">+29:00</td><td>tenth failed check → reboot. Boot clears the rescue AP. Node returns.</td><td class="ladder-c">keepalive</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body" style="margin-top:1rem">Read the third row against the fourth. The keepalive's own
+      diagnosis was <em>correct</em> — it identified an upstream outage and deliberately refused to
+      escalate, which is exactly the restraint you want. Thirty seconds later the other recovery system
+      pulled the radio out from under it, and that restraint became irrelevant.</p>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>Masked by its own last resort</div>
+    <h2><span class="num">03</span>The recovery ladder had never worked</h2>
+    <p class="sub">The keepalive escalates in five rungs: unblock the radio, force the connection, restart
+      the network manager, reload the driver, and finally reboot. Four of those five had never succeeded a
+      single time in the entire life of the log file.</p>
+    <p class="body">Once rescue mode marks the radio unmanaged, the network manager has no wireless device
+      left to act on, so every "force the connection" rung fails on a device-not-found error. That error
+      appears <strong>48 times, going back to the log's very first lines</strong>. Nobody noticed, and the
+      reason nobody noticed is the interesting part: <strong>the fifth rung works.</strong> The reboot
+      genuinely does fix it, every time. A ladder where only the last rung functions looks, from the
+      outside, exactly like a ladder that works — just one that always needs the big hammer.</p>
+    <p class="body" style="margin-top:1rem">The driver-reload rung had a second, self-inflicted bug worth
+      naming. It stops the wireless supplicant to free the driver, reloads, then restarts <em>only</em> the
+      network manager — never the supplicant. A network manager with no supplicant cannot bring up Wi-Fi at
+      all, and the on-demand activation that should have covered for it failed too. So the rung meant to
+      recover the radio was reliably leaving it in a state where <em>nothing</em> could recover it except a
+      reboot. The escalation was manufacturing the condition that justified its own last resort.</p>
+    <div class="chips">
+      <span class="tchip">a recovery step that can't verify it has a device to act on isn't a recovery step</span>
+      <span class="tchip">stopping a dependency without restarting it turns recovery into destruction</span>
+      <span class="tchip">a working last resort hides every broken rung above it</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage twist"><span class="dot"></span>Ownership, not cleverness</div>
+    <h2><span class="num">04</span>The fix was deciding who owns the radio</h2>
+    <p class="sub">Nothing here was fixed by making either system smarter. Both were behaving exactly as
+      designed. The bug was that two autonomous recovery systems had equal claim to one piece of hardware
+      and no way to know the other existed.</p>
+    <p class="body">Four changes, in order of leverage. <strong>Rescue mode is off on this node</strong> —
+      it has three other ways home, so trading its uplink for an access point is a pure loss. Notably the
+      software already had a flag for this; the flag was only honoured on a legacy code path and ignored by
+      the loop that actually runs on a headless box, so it was unusable on precisely the machines that
+      need it. That's now consistent, which makes it a fix for anyone running the same stack, not just us.</p>
+    <p class="body" style="margin-top:1rem">Then: the driver-reload rung <strong>restarts the supplicant it
+      stopped</strong>. A new rung <strong>reclaims a hijacked radio</strong> — detects that something has
+      turned the uplink into an access point, hands it back, and only then continues escalating. And it
+      <strong>refuses to do that</strong> when a deliberate mode owns the radio on purpose, because
+      wardriving and on-screen diagnostics both legitimately take it; a recovery system that fights
+      intentional use is just a different bug. Finally the hub's access point moved off the channel the
+      malformed frames arrive on — those announcements target a fixed default channel, and we were sitting
+      on it.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">rescue AP on this node</div><div class="v no">disabled — flag now honoured on both code paths</div></div>
+      <div class="row"><div class="k">driver-reload rung</div><div class="v yes">restarts the supplicant, not just the manager</div></div>
+      <div class="row"><div class="k">new reclaim rung</div><div class="v yes">hands the radio back before escalating</div></div>
+      <div class="row"><div class="k">deliberate modes</div><div class="v yes">respected — reclaim holds, does not fight</div></div>
+      <div class="row"><div class="k">upstream trigger</div><div class="v">dodged by channel, <span class="chip no">bug not fixed</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Honesty notes</h2>
+    <p class="body">Three, so this doesn't read as tidier than it is.</p>
+    <p class="body" style="margin-top:1rem"><strong>The reclaim rung is only partly proven.</strong> It was
+      tested against a spare radio with a faked hijack, using an override added for exactly that purpose,
+      with the destructive rungs gated off. Detection fired, the fake access point was torn down, the radio
+      came back, and the live uplink never moved. What that does <em>not</em> prove is reclaiming the real
+      uplink mid-hijack. That needs deliberate fault injection on a live node, and it hasn't been done yet.</p>
+    <p class="body" style="margin-top:1rem"><strong>The upstream crash is dodged, not fixed.</strong> The
+      distribution ships only the affected version; the fix is in a newer upstream release that would have
+      to be built by hand. Moving off the announcement channel means the frames don't reach the radio that
+      was crashing — it does not mean the crash is gone. One of the hub's other radios still sits on a
+      channel where the same class of frame is legal, and the source device hasn't been identified yet; its
+      address is randomised. We're not publishing the frame or anything that would let someone reproduce
+      the crash on other people's hardware.</p>
+    <p class="body" style="margin-top:1rem"><strong>The first explanation was ours, and it was wrong.</strong>
+      "Upstream Wi-Fi crash took the node down" was written into the decision log a day earlier and believed.
+      It survived because it was plausible, timestamped, and had a real defect behind it. What broke it was
+      arithmetic — a one-second outage cannot produce a 29-minute gap — not new evidence. The correction is
+      now recorded above the original entry rather than replacing it.</p>
+  </section>
+
+  <div class="takeaway">
+    <p><span class="big">Two systems that each recover correctly can still take a node down, if nobody decided which one owns the hardware.</span>
+    Neither the rescue AP nor the keepalive was buggy in isolation — one raised an access point when the
+    network vanished, the other escalated when it couldn't reach the gateway. Both correct. Put them on one
+    radio with no shared notion of ownership and they produce a reboot loop that looks, in the logs, exactly
+    like an upstream hardware fault. The lesson isn't about Wi-Fi. It's that autonomous recovery needs an
+    owner and a way to check whether it still has the thing it's about to act on — and that a last resort
+    which always works is very good at hiding the fact that nothing before it does.</p>
+  </div>
+
+  <footer>
+    <span>GhostGrid · stackzac22</span>
+    <span>Pi 4B node · rescue-AP vs keepalive contention · 8 upstream crashes / 48 failed recovery attempts / 4 reboots</span>
+  </footer>
+
+</div>
+
+<p style="text-align:center;margin:34px 0 44px;font-family:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace">
+  <a href="index.html" style="color:var(--node);text-decoration:none">&larr; back to the GhostGrid journal</a>
+</p>
+</body>
+</html>
