@@ -213,15 +213,15 @@
 
   <section>
     <h2><span class="num">03</span>Measured: the local voice path</h2>
-    <p class="sub">All the private link, zero cloud. The ears and voice are fast — end-to-end
+    <p class="sub">All on the private link, zero cloud. The ears and voice are fast — end-to-end
       latency is dominated by the brain, not the pipeline.</p>
     <div class="scroll">
       <table>
         <thead><tr><th>Stage</th><th>Engine · host</th><th>Latency</th></tr></thead>
         <tbody>
-          <tr><td>Speech → text</td><td>Whisper · Pi (a local address)</td><td class="num">~2.8 s</td></tr>
+          <tr><td>Speech → text</td><td>Whisper · Pi</td><td class="num">~2.8 s</td></tr>
           <tr><td>Think</td><td>qwen2.5:1.5b · X1</td><td class="num">1–9 s</td></tr>
-          <tr><td>Text → speech</td><td>Piper · Pi (a local address)</td><td class="num">0.82 s to first audio</td></tr>
+          <tr><td>Text → speech</td><td>Piper · Pi</td><td class="num">0.82 s to first audio</td></tr>
           <tr><td>Bigger brain (7B on ARM)</td><td>on-demand only</td><td class="num">~39 s (72 s cold)</td></tr>
         </tbody>
       </table>

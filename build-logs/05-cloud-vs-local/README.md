@@ -13,7 +13,7 @@ command and CVE.** This log is the proof of why.
 ## What "local" is here (the box under test)
 - **X1** — ThinkPad X1 Carbon, Intel i5-6200U, **4 threads, no usable GPU**, 7.6 GB RAM.
 - Model: **qwen2.5:1.5b** (1.0 GB) via Ollama, CPU inference.
-- Voice engines: **Whisper** (STT) + **Piper** (TTS) on `the Pi 4B node` (Pi, the private link a local address).
+- Voice engines: **Whisper** (STT) + **Piper** (TTS) on the Pi 4B node, on the private link.
 - Everything on **the private link**, zero cloud, zero internet dependency.
 
 ## What "cloud" is here
@@ -36,15 +36,15 @@ command and CVE.** This log is the proof of why.
   invents authoritative-sounding wrong facts** on domain questions. Exactly the failure
   mode that bites in pentest work — confident, wrong, verbose.
 
-## MEASURED: local voice pipeline (all the private link, no cloud)
+## MEASURED: local voice pipeline (all on the private link, no cloud)
 - **Whisper STT:** ~2.8 s for a short spoken command.
 - **Brain (1.5b):** ~1–9 s depending on answer length.
-- **Piper TTS:** connect 0.00 s, **first audio 0.82 s** over the private link (a local address).
+- **Piper TTS:** connect 0.00 s, **first audio 0.82 s** over the private link.
 - End-to-end press→speech is dominated by the brain, not the ears/voice.
 
-## MEASURED: 1.5b vs 3b vs 7b head-to-head (2026-07-17, all the private link)
+## MEASURED: 1.5b vs 3b vs 7b head-to-head (2026-07-17, all on the private link)
 Ran the SAME four prompts across all three local models the moment the-one came back
-on the private link (a local address). 1.5b on the X1 (x86); 3b + 7b on the-one (ARM, no GPU).
+on the private link. 1.5b on the X1 (x86); 3b + 7b on the-one (ARM, no GPU).
 
 **Speed — wall seconds per prompt:**
 
