@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Share QR
+Comment=Scan to text my GhostGrid site to anyone
+Exec=xdg-open /home/tec/Desktop/Share-QR.png
+Icon=/home/tec/Desktop/Share-QR.png
+Terminal=false
+Categories=Utility;

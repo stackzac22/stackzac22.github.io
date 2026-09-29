@@ -1,0 +1,133 @@
+<title>GhostGrid — what I do</title>
+<style>
+  :root{
+    --bg:#12100C; --panel:#1B1811; --panel-2:#221E15; --line:#332C20;
+    --fg:#F1EBDE; --dim:#A99C82; --faint:#6E6450;
+    --gold:#FFC24D; --gold-hi:#FFE7B4; --gold-soft:rgba(255,194,77,.12); --gold-deep:#B9761A;
+    --good:#6BBF73;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#F4EEE2; --panel:#FBF7EF; --panel-2:#EFE7D7; --line:#E4DAC7;
+      --fg:#231D12; --dim:#6B6049; --faint:#9C8F73;
+      --gold:#B0731A; --gold-hi:#D69B32; --gold-soft:rgba(176,115,26,.10); --gold-deep:#7C5210; --good:#3E8F49;
+    }
+  }
+  :root[data-theme="dark"]{ --bg:#12100C; --panel:#1B1811; --panel-2:#221E15; --line:#332C20; --fg:#F1EBDE; --dim:#A99C82; --faint:#6E6450; --gold:#FFC24D; --gold-hi:#FFE7B4; --gold-soft:rgba(255,194,77,.12); --gold-deep:#B9761A; --good:#6BBF73; }
+  :root[data-theme="light"]{ --bg:#F4EEE2; --panel:#FBF7EF; --panel-2:#EFE7D7; --line:#E4DAC7; --fg:#231D12; --dim:#6B6049; --faint:#9C8F73; --gold:#B0731A; --gold-hi:#D69B32; --gold-soft:rgba(176,115,26,.10); --gold-deep:#7C5210; --good:#3E8F49; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(70% 42% at 50% 0%, var(--gold-soft), transparent 60%);}
+  .wrap{max-width:860px;margin:0 auto;padding:clamp(1.4rem,4vw,3rem) clamp(1.1rem,4vw,2rem) 4rem;}
+  .kick{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0}
+  h1{font-family:var(--mono);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+     font-size:clamp(1.7rem,5.5vw,2.4rem);margin:.7rem 0 0}
+  .lede{font-size:clamp(1.05rem,2.3vw,1.2rem);color:var(--fg);margin:.7rem 0 0;max-width:56ch}
+  .creed{font-family:var(--mono);color:var(--gold);font-size:.82rem;letter-spacing:.04em;margin:1rem 0 0}
+  .rule{height:1px;background:var(--line);border:0;margin:2.2rem 0}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+  .svc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.2rem 1.3rem;
+    display:flex;flex-direction:column;gap:.4rem}
+  .svc .ic{font-size:1.35rem;line-height:1}
+  .svc h3{font-family:var(--mono);font-size:.86rem;letter-spacing:.03em;margin:.35rem 0 0;color:var(--gold)}
+  .svc p{margin:0;color:var(--dim);font-size:.95rem}
+  .svc .tag{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold-deep);margin-top:.2rem}
+
+  .ethos{background:var(--panel-2);border:1px solid color-mix(in srgb,var(--gold) 24%,var(--line));
+    border-radius:14px;padding:1.3rem 1.4rem;margin-top:1.6rem}
+  .ethos p{margin:0;color:var(--fg)}
+  .ethos p+p{margin-top:.5rem;color:var(--dim);font-size:.95rem}
+  .ethos b{color:var(--gold)}
+
+  footer{margin-top:2.6rem;text-align:center}
+  footer .site{font-family:var(--mono);font-size:.9rem;color:var(--gold);letter-spacing:.02em}
+  footer .sig{font-family:var(--mono);font-size:.66rem;color:var(--faint);letter-spacing:.16em;text-transform:uppercase;margin-top:.5rem}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="kick">GhostGrid</p>
+    <h1>What I do</h1>
+    <p class="lede">Local-first tech help from someone who builds his own tools. Security,
+      phones, computers, and the quiet plumbing that makes them work — done privately,
+      explained plainly.</p>
+    <p class="creed">Local. Private. Honest — your data stays yours.</p>
+  </header>
+
+  <hr class="rule">
+
+  <div class="grid">
+    <div class="svc">
+      <span class="ic">🛠️</span>
+      <h3>General IT &amp; tech tasks</h3>
+      <p>The everyday stuff — setup, fixes, "why won't this work," getting things talking to each other.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">🔐</span>
+      <h3>Private remote help — SSH / VNC</h3>
+      <p>I hop on remotely and sort it out, backed by my own <strong>local AI</strong>.
+        Nothing goes to a cloud — the session and your data stay between us.</p>
+      <span class="tag">always private</span>
+    </div>
+    <div class="svc">
+      <span class="ic">📡</span>
+      <h3>Network scans</h3>
+      <p>A full head-count of everything on your network — and a flag on anything that
+        shouldn't be there or is left wide open.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">📋</span>
+      <h3>Vetted vulnerability reports</h3>
+      <p>Plain-English writeup of what's weak, why it matters, and exactly how to close it.
+        Findings I've checked by hand — no auto-scanner noise.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">📱</span>
+      <h3>Phone rooting + Termux setup</h3>
+      <p>Unlock what your phone can really do — root, plus a Termux toolkit so it becomes
+        an actual pocket workstation.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">🐉</span>
+      <h3>Kali NetHunter / NetHunter Pro</h3>
+      <p>Full mobile pentest platform installed and tuned — the standard build or the
+        Pro/dual-boot route, on supported hardware.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">🤝</span>
+      <h3>Phone help — any phone</h3>
+      <p>From posh flagship to hand-me-down: setup, cleanup, migration, and patient
+        how-to for whatever's giving you trouble.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">🐧</span>
+      <h3>Reflash a computer to Linux</h3>
+      <p>Give an old or Windows-tired machine a second life — a clean, fast, private
+        Linux install set up the way you'll actually use it.</p>
+    </div>
+    <div class="svc">
+      <span class="ic">🔎</span>
+      <h3>OSINT research</h3>
+      <p>Find what's publicly out there — on a person, a business, or a threat — pulled
+        together into something you can actually read and use.</p>
+    </div>
+  </div>
+
+  <div class="ethos">
+    <p><b>The through-line:</b> everything runs local and private wherever it can, and I
+      tell you straight what a thing does and doesn't do.</p>
+    <p>Same rule as the security work — a real second set of hands, never a black box.</p>
+  </div>
+
+  <footer>
+    <p class="site">stackzac22.github.io</p>
+    <p class="sig">GhostGrid · scan · text · done</p>
+  </footer>
+</div>

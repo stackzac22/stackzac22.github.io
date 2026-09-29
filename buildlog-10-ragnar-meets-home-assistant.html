@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Log 10 — wiring my pentest box's presence sensing and security alerts into Home Assistant as native entities. An entity name I already owned, a settings screen that would have crashed, an 'event' that isn't one, and a mesh of one that became a mesh of two.">
+<meta name="color-scheme" content="light dark">
+<title>A mesh of one — GhostGrid Build Log 10</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --node:#3B9EFF; --rescue:#FF8A3D; --ladder:#E0A33E; --ladder-soft:rgba(224,163,62,.14);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+      --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+      --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+      --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+      --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+      --node:#1F7FD6; --rescue:#D96A22; --ladder:#B07818; --ladder-soft:rgba(176,120,24,.10);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#0E1217; --panel:#151b22; --panel-2:#1b232c; --line:#28323d;
+    --fg:#E6EAEE; --fg-dim:#9AA7B4; --fg-faint:#6b7885;
+    --clue:#35C46B; --clue-soft:rgba(53,196,107,.12);
+    --wall:#E5484D; --wall-soft:rgba(229,72,77,.12);
+    --twist:#B98CFF; --twist-soft:rgba(185,140,255,.12);
+    --node:#3B9EFF; --rescue:#FF8A3D; --ladder:#E0A33E; --ladder-soft:rgba(224,163,62,.14);
+  }
+  :root[data-theme="light"]{
+    --ink:#F3F5F7; --panel:#FFFFFF; --panel-2:#F7F9FB; --line:#DAE0E6;
+    --fg:#101820; --fg-dim:#51606d; --fg-faint:#8593a0;
+    --clue:#1f9d55; --clue-soft:rgba(31,157,85,.08);
+    --wall:#c93b40; --wall-soft:rgba(201,59,64,.08);
+    --twist:#7a4fd1; --twist-soft:rgba(122,79,209,.08);
+    --node:#1F7FD6; --rescue:#D96A22; --ladder:#B07818; --ladder-soft:rgba(176,120,24,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:clamp(1.2rem,4vw,3.5rem) clamp(1rem,4vw,2rem);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--fg-faint);}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(1.8rem,5vw,2.85rem);line-height:1.12;
+    margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em;}
+  h1 .g{color:var(--node)}
+  .lede{font-size:clamp(1.02rem,2.2vw,1.2rem);color:var(--fg-dim);max-width:66ch;margin:1.1rem 0 0;}
+  h2{font-family:var(--mono);font-weight:600;font-size:1.24rem;margin:0 0 .2rem;letter-spacing:-.01em;}
+  h2 .num{color:var(--fg-faint);font-weight:400;margin-right:.6rem;}
+  section{margin-top:clamp(2.2rem,5.5vw,3.6rem);}
+  .sub{color:var(--fg-dim);margin:.2rem 0 1.2rem;max-width:66ch;}
+  p.body{color:var(--fg-dim);max-width:68ch;margin:.6rem 0 0}
+  p.body strong{color:var(--fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--fg) 8%,transparent);
+    padding:.08em .35em;border-radius:5px}
+
+  .stage{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+  .stage .dot{width:8px;height:8px;border-radius:50%}
+  .stage.clue{color:var(--clue)} .stage.clue .dot{background:var(--clue);box-shadow:0 0 10px var(--clue)}
+  .stage.wall{color:var(--wall)} .stage.wall .dot{background:var(--wall);box-shadow:0 0 10px var(--wall)}
+  .stage.twist{color:var(--twist)} .stage.twist .dot{background:var(--twist);box-shadow:0 0 10px var(--twist)}
+
+  .checkbox{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:1.1rem}
+  .checkbox .row{display:grid;grid-template-columns:minmax(160px,240px) 1fr;gap:1px;background:var(--line)}
+  .checkbox .row > div{background:var(--panel);padding:.85rem 1.1rem;font-size:.92rem}
+  .checkbox .row .k{font-family:var(--mono);font-size:.78rem;color:var(--fg-faint)}
+  .checkbox .row .v{font-family:var(--mono);font-size:.88rem}
+  .checkbox .row .yes{color:var(--clue)}
+  .checkbox .row .no{color:var(--wall)}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:1rem}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:560px}
+  caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);padding:.9rem 1rem 0}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--fg-faint);font-weight:600;background:var(--panel-2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--fg)}
+  td.t{font-family:var(--mono);color:var(--fg-faint);white-space:nowrap}
+  td.node-c{color:var(--node)} td.rescue-c{color:var(--rescue)} td.ladder-c{color:var(--ladder)}
+  tr.win td{background:var(--ladder-soft)}
+  .chip{font-family:var(--mono);font-size:.74rem;padding:.12rem .5rem;border-radius:999px;display:inline-block}
+  .chip.ok{color:var(--clue);background:var(--clue-soft)}
+  .chip.no{color:var(--wall);background:var(--wall-soft)}
+
+  pre{font-family:var(--mono);font-size:.83rem;line-height:1.55;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;overflow-x:auto;
+    margin-top:1rem;color:var(--fg-dim)}
+  pre .c{color:var(--fg-faint)}
+
+  .takeaway{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);
+    padding:1.3rem 1.4rem;margin-top:2rem}
+  .takeaway p{margin:0;font-size:1.03rem;color:var(--fg-dim)}
+  .takeaway .big{font-family:var(--mono);color:var(--fg);font-weight:600;display:block;margin-bottom:.5rem}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+  .tchip{font-family:var(--mono);font-size:.78rem;padding:.3rem .7rem;border-radius:999px;
+    border:1px solid var(--line);color:var(--fg-dim);background:var(--panel)}
+
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.76rem;color:var(--fg-faint);display:flex;
+    justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  @media (max-width:560px){ .checkbox .row{grid-template-columns:1fr} }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">GhostGrid · Build Log 10 · 2026-09-29</p>
+  <h1>Fifteen sensors,<br>and a <span class="g">mesh</span> of one</h1>
+  <p class="lede">Ragnar — the pentest and sensing box on a Raspberry Pi — already knows when someone is in
+    the room, roughly how fast they're breathing, and when something on my network starts acting like an
+    attacker. None of that could switch a light or buzz my phone, because it lived in Ragnar's own web page.
+    This is how it became part of Home Assistant: fifteen native entities, four automations, and a mesh
+    feature I switched on only to find I'd built a network with one member — until I found out why.</p>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>The shape of it</div>
+    <h2><span class="num">01</span>Home Assistant never runs Ragnar code</h2>
+    <p class="sub">The integration is a thin client. Every thirty seconds it asks the same web API the Ragnar
+      dashboard already uses, and turns the answers into sensors.</p>
+    <p class="body">That design is the reason I trust it. Nothing about the pentest tooling moves into the
+      home-automation box; Home Assistant just logs in the way a browser would, keeps the session cookie, and
+      makes <strong>read-only</strong> requests from then on. If the session expires it logs in again. If
+      Ragnar is down, the sensors go unavailable and nothing else breaks.</p>
+    <p class="body" style="margin-top:1rem">I also chose <em>not</em> to install it through the community
+      store, which would have pulled the newest version from GitHub. I copied the integration from the exact
+      copy of Ragnar already running on the Pi, so the client and the API it talks to are guaranteed to be
+      the same age.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">presence / people</div><div class="v yes">live — off, 0 (empty room)</div></div>
+      <div class="row"><div class="k">heart / breathing rate</div><div class="v">unknown — correct: nobody in range</div></div>
+      <div class="row"><div class="k">security alert feed</div><div class="v yes">live — 100 alerts, 17 incidents</div></div>
+      <div class="row"><div class="k">open vulnerabilities</div><div class="v yes">44</div></div>
+      <div class="row"><div class="k">mesh entities</div><div class="v no">unavailable — mesh switched off</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>Three small walls</div>
+    <h2><span class="num">02</span>Things the docs didn't warn me about</h2>
+    <p class="sub">None of these were dramatic. All three would have bitten later, quietly, if I hadn't
+      checked.</p>
+    <p class="body"><strong>I already owned the name.</strong> Months ago I built a small bridge that pushes
+      Ragnar's scan counts into Home Assistant over MQTT, and one of its sensors was called
+      <code>ragnar_vulnerabilities</code>. The new integration wanted the same name, so Home Assistant quietly
+      gave it <code>_2</code>. An existing automation depends on the old one, so I renamed the new one instead
+      of the other way round.</p>
+    <p class="body" style="margin-top:1rem"><strong>A settings screen that would have crashed.</strong> The
+      integration's "Configure" dialog used a pattern Home Assistant removed late last year. It installs fine
+      and runs fine; it only breaks the day you try to change the poll interval. I patched the two lines
+      locally and wrote down that the patch has to be re-applied if I ever re-copy the integration.</p>
+    <p class="body" style="margin-top:1rem"><strong>The "event" that isn't an event.</strong> Security alerts
+      arrive as an <em>event entity</em> — a sensor whose state is the time of the last alert, with the details
+      attached. It does not fire anything on Home Assistant's event bus, so the obvious automation trigger
+      would never fire. The working trigger watches the entity's state. It also needs a guard: when Home
+      Assistant restarts, the entity restores its last alert, which looks exactly like a new one.</p>
+    <div class="chips">
+      <span class="tchip">check what name you already own</span>
+      <span class="tchip">"installs fine" ≠ "every screen works"</span>
+      <span class="tchip">a restart can look like a new alert</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage clue"><span class="dot"></span>What it does now</div>
+    <h2><span class="num">03</span>Four automations, and two I couldn't build</h2>
+    <div class="scroll">
+      <table>
+        <caption>Wired</caption>
+        <thead><tr><th>When</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>high / critical security alert</td><td>notification + phone push; the voice pyramid reads it out, daytime only</td></tr>
+          <tr class="win"><td>captive-portal / evil-twin alert, medium or worse</td><td>same, plus the pyramid's LED goes to alert for a minute</td></tr>
+          <tr><td>sensing backend down 5 min</td><td>notification — presence data would otherwise go stale silently</td></tr>
+          <tr><td>mesh node needs attention 2 min</td><td>notification + phone push</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body" style="margin-top:1rem">The captive-portal rule triggers at <strong>medium</strong> on
+      purpose: a portal that has only just been switched on scores "possible", not "confirmed", and I'd rather
+      hear about it early. A keyword filter keeps routine medium alerts from setting it off.</p>
+    <p class="body" style="margin-top:1rem">The two I didn't build were the fun ones — hallway light on when
+      someone's detected, and an LED strip that flashes red during an evil-twin attack. I don't own a light
+      Home Assistant can turn red. Everything I have is on/off or brightness only, so the "flash red" became
+      the voice pyramid's alert LED. Automations that point at lights that don't exist are worse than none.</p>
+  </section>
+
+  <section>
+    <div class="stage twist"><span class="dot"></span>The mesh of one</div>
+    <h2><span class="num">04</span>I switched on a mesh with nobody in it</h2>
+    <p class="sub">Ragnar can link several units over my private VPN so each one sees what its neighbours see.
+      I turned it on. It reported one node reachable out of one.</p>
+    <p class="body">Then I found a second Ragnar I'd half forgotten — a Pi Zero 2 W, online on the same
+      private network, same software, same login. I switched the mesh on there too. It also reported a mesh
+      of one. Two boxes that can reach each other perfectly well, each insisting it was alone.</p>
+    <p class="body" style="margin-top:1rem">The reason is deliberate. Ragnar doesn't treat "on my VPN" as
+      "in my mesh". A unit only counts as a peer if it carries a specific <strong>tag</strong> in the VPN's
+      access policy, because the tag is something only the account admin can grant. Neither of my boxes had
+      it. Switching the feature on was necessary, not sufficient.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">Pi 4 — mesh switch</div><div class="v yes">on · unit 1</div></div>
+      <div class="row"><div class="k">Pi Zero 2 W — mesh switch</div><div class="v yes">on · unit 2</div></div>
+      <div class="row"><div class="k">mesh tag on either</div><div class="v no">no</div></div>
+      <div class="row"><div class="k">peers each one sees</div><div class="v no">0</div></div>
+    </div>
+    <p class="body" style="margin-top:1rem">The built-in way to get the tag is to have Ragnar log the box
+      back in to the VPN with a tagged key. I'm not doing that. Logging a node back in can hand it a new
+      address, and the Pi 4's address is what Home Assistant and my message broker point at. Tagging the
+      existing machines from the admin side keeps their addresses. There's a second trap in the same step:
+      the Pi 4 uses the VPN's own SSH, and the default SSH rule doesn't cover tagged machines, so tagging it
+      without adding a rule would lock me out of my own box.</p>
+    <p class="body" style="margin-top:1rem">Two days later I did it: declared the tag in the access policy,
+      added the SSH rule for tagged machines, then tagged both boxes from the admin console. It took three
+      saves. The first paste arrived scrambled — copying a long block out of a terminal had silently dropped
+      chunks of lines. The second failed because I'd added the rule that <em>uses</em> the tag before the part
+      that <em>declares</em> it. The third went through.</p>
+    <div class="checkbox">
+      <div class="row"><div class="k">addresses after tagging</div><div class="v yes">unchanged, both</div></div>
+      <div class="row"><div class="k">SSH after tagging</div><div class="v yes">still works, both</div></div>
+      <div class="row"><div class="k">peers each one sees</div><div class="v yes">1 — each other</div></div>
+      <div class="row"><div class="k">mesh reachable</div><div class="v yes">2 / 2 · nothing needs attention</div></div>
+      <div class="row"><div class="k">Home Assistant</div><div class="v yes">mesh nodes reachable = 2</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stage wall"><span class="dot"></span>Found while checking</div>
+    <h2><span class="num">05</span>Five hours of "unavailable" I didn't notice</h2>
+    <p class="body">Verifying the mesh in Home Assistant, every Ragnar sensor read unavailable — not just
+      the mesh ones. Nothing to do with the tags: Home Assistant had restarted early that morning before the
+      network was up, and the integration's first login <strong>timed out</strong>. Its client only treated
+      network errors as "can't connect, try again later". A timeout isn't one of those, so Home Assistant
+      saw a crash, gave up, and never retried. Fifteen sensors sat dead for about five and a half hours, and
+      the only reason I noticed is that I happened to be looking.</p>
+    <p class="body" style="margin-top:1rem">The fix is two lines: treat a timeout as "can't connect" too, which
+      tells Home Assistant to keep retrying on its own. After a restart everything came back — including
+      someone in the room, and a mesh of two.</p>
+    <div class="chips">
+      <span class="tchip">a timeout is a connection error</span>
+      <span class="tchip">"unavailable" is silent — nothing alerts on it</span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>Honesty notes</h2>
+    <p class="body"><strong>One key still expires.</strong> The Pi 4's VPN key never expires; the Pi Zero's
+      still has an expiry date about five months out. Tagging an existing machine didn't clear it. That's one
+      admin click, and it's on the list — a mesh node that quietly drops off the network in February is
+      exactly the failure the tag was supposed to prevent.</p>
+    <p class="body" style="margin-top:1rem"><strong>The alert automations haven't fired for real.</strong>
+      The entities are live and the rules are loaded, but no high-severity alert or captive portal has come
+      through since. Until one does, the phone push and the pyramid voice are configured, not proven.</p>
+    <p class="body" style="margin-top:1rem"><strong>My phone push is still unreliable.</strong> The app I use
+      only receives pushes while it's actively connected. Every alert also lands as a Home Assistant
+      notification, so nothing is lost — but "it'll buzz my phone" is true only some of the time.</p>
+  </section>
+
+  <div class="takeaway">
+    <p><span class="big">Turning a feature on is not the same as it working — look at what it reports back.</span>
+    The integration went in cleanly, and three quiet problems only showed up because I checked the entity
+    names, the settings screen and the trigger type instead of trusting the install. The mesh was the same
+    lesson in a louder form: "enabled" and "one node of one" were both true at once, until the boxes carried
+    the tag. And a fourth problem — five hours of dead sensors — only surfaced because I looked. Nothing
+    tells you a sensor has gone quiet; you have to go and see.</p>
+  </div>
+
+  <footer>
+    <span>GhostGrid · stackzac22</span>
+    <span>Ragnar → Home Assistant · 15 entities · 4 automations · mesh 2/2 · timeout retry fix</span>
+  </footer>
+
+</div>
+
+<p style="text-align:center;margin:34px 0 44px;font-family:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace">
+  <a href="index.html" style="color:var(--node);text-decoration:none">&larr; back to the GhostGrid journal</a>
+</p>
+</body>
+</html>

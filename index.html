@@ -862,6 +862,41 @@
       <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-09-mesh-bridge.html" style="color:var(--accent-ink)">Read the full log — the two build targets, the channel, the bridge →</a></p>
     </section>
 
+    <!-- BUILD LOG 10 -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">Build log · 10</span><h2>Fifteen sensors, and a mesh of one.</h2></div>
+      <p class="sec-note">Ragnar already knew when someone was in the room and when something on my network started
+        acting like an attacker — but it lived in its own web page. This is the night it became part of Home
+        Assistant: fifteen native entities, four automations, and a mesh I switched on only to find it had one member.</p>
+
+      <article class="feature reveal d1">
+        <div class="feature-top">
+          <div>
+            <h3>Turning a feature on is not the same as it working — look at what it reports back.</h3>
+            <p class="blurb">The integration is a thin, read-only client — Home Assistant never runs Ragnar code. It went
+              in cleanly, and three quiet problems only surfaced because I checked: an entity name I already owned, a
+              settings screen that would have crashed on today's Home Assistant, and an "event" that never fires on the
+              event bus.</p>
+          </div>
+          <div class="chain">
+            <span class="chip"><b>Ragnar</b> · presence + alerts</span>
+            <span class="chip"><b>Home Assistant</b> · 15 entities</span>
+            <span class="chip"><b>Mesh</b> · 2 / 2 linked</span>
+          </div>
+        </div>
+
+        <div class="landed">
+          <span class="k">The honest read</span>
+          <p>Two Ragnars on the same private network, both with the mesh switched on, each reporting a mesh of one.
+            Being on the VPN isn't membership — a unit needs an admin-granted tag. Tagged from the admin side so their
+            addresses didn't move: now 2 of 2. Checking it also exposed five hours of dead sensors from a timeout the
+            integration never retried — fixed.</p>
+        </div>
+      </article>
+
+      <p class="sec-note" style="margin:14px 0 0"><a href="buildlog-10-ragnar-meets-home-assistant.html" style="color:var(--accent-ink)">Read the full log — the three walls, the mesh of one, the silent five hours →</a></p>
+    </section>
+
     <!-- FLEET GRID -->
     <section>
       <div class="sec-head"><span class="eyebrow">The grid</span><h2>Every node, and where it honestly stands</h2></div>

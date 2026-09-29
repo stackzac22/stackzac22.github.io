@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Hub — GhostGrid</title>
+<style>
+  :root{
+    --bg:#12100C; --panel:#1B1811; --panel-2:#221E15; --line:#332C20;
+    --fg:#F1EBDE; --dim:#A99C82; --faint:#6E6450;
+    --gold:#FFC24D; --gold-hi:#FFE7B4; --gold-soft:rgba(255,194,77,.12); --gold-deep:#B9761A; --good:#6BBF73;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#F4EEE2; --panel:#FBF7EF; --panel-2:#EFE7D7; --line:#E4DAC7;
+      --fg:#231D12; --dim:#6B6049; --faint:#9C8F73; --gold:#B0731A; --gold-hi:#D69B32;
+      --gold-soft:rgba(176,115,26,.10); --gold-deep:#7C5210; --good:#3E8F49; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(70% 38% at 50% 0%, var(--gold-soft), transparent 60%);}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(1.4rem,4vw,2.6rem) clamp(1.1rem,4vw,2rem) 4rem;}
+  .kick{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0}
+  h1{font-family:var(--mono);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+     font-size:clamp(1.5rem,4.5vw,2.1rem);margin:.6rem 0 0}
+  .lede{color:var(--dim);margin:.5rem 0 0;max-width:60ch}
+  .sec{margin-top:clamp(2rem,5vw,3rem)}
+  .sec > h2{font-family:var(--mono);font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;
+     color:var(--gold-deep);margin:0 0 .3rem;display:flex;align-items:baseline;gap:.6rem}
+  .sec > .hint{color:var(--faint);font-size:.9rem;margin:0 0 1.1rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem;
+     display:flex;gap:1rem;align-items:flex-start}
+  .card.personal{border-color:color-mix(in srgb,var(--gold) 34%,var(--line))}
+  .qtile{background:#fff;border-radius:10px;padding:8px;flex:0 0 118px;line-height:0}
+  .qtile img{width:102px;height:102px;display:block;image-rendering:pixelated}
+  .meta{min-width:0;display:flex;flex-direction:column;gap:.35rem}
+  .meta h3{font-family:var(--mono);font-size:.9rem;letter-spacing:.02em;margin:0;color:var(--gold);
+     display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;
+     color:var(--bg);background:var(--gold);padding:.12rem .45rem;border-radius:20px;font-weight:700}
+  .sub{margin:0;color:var(--dim);font-size:.9rem}
+  .copy{align-self:flex-start;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+     color:var(--gold);background:transparent;border:1px solid var(--line);border-radius:8px;
+     padding:.3rem .6rem;cursor:pointer;transition:border-color .15s,color .15s}
+  .copy:hover{border-color:var(--gold)}
+  .copy.done{color:var(--good);border-color:var(--good)}
+  .pl{font-family:var(--mono);font-size:.68rem;color:var(--faint);word-break:break-all;
+     max-height:2.7em;overflow:hidden;line-height:1.35}
+  footer{margin-top:3rem;text-align:center;font-family:var(--mono);font-size:.7rem;
+     color:var(--faint);letter-spacing:.14em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kick">GhostGrid</p>
+  <h1>QR Hub</h1>
+  <p class="lede">Every share code in one place. Point a phone camera at any tile.
+    <strong>Straight-load</strong> codes open the page; <strong>share-text</strong> codes
+    pre-fill a message to forward — no recipient set, so it goes to whoever they choose.</p>
+
+  <section class="sec">
+    <h2>Straight-load <span>scan → opens the page</span></h2>
+    <p class="hint">Point, tap the banner, you're on the site.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="qtile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnwAAAJ8AQMAAABeI+4VAAAABlBMVEUAAAD///+l2Z/dAAAAAnRSTlP//8i138cAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAPrSURBVHic7dlBshsxCEVRdqD977J3QGILHkhxJkkqeHBVLle3BEeeNKL/N//HwwABAQEBAQH/BjSN5T8//rwuX/P7dgcsr1V975iWDggIOAmufLBT6FkK3xvVXv03ZDogIOAsqKWrAkTkW9u3Ste+PR0QEPBLwPs268NOF7gDNAMICPiFYIzduj9HV9+WXbeAgIDfA/al60zvRSOc3KvP5wUgIOAcqLH8Tz4tHRAQcBDsYwe8rp58/HsR+P25LwAQEHAQrMpgVrf6rmf/YL3/qfwsDoCAgANgm9+30ZZ7/TGts71i9N33HSAg4DCoyI3rj2nKbf/zqtKRrO+6AQgIOA26/mO1vKisGDtRlPw+AwgIOAvqGTczBYfcKkakPMdv2GBDAAEBx8DjTLeMUYpO/+W6FeuqG3HiAwICzoGe1eA9YsGOvYRv2dqoX7IAAQGnwSb0gAg7Uqqrjxj1Aw4ICDgJ1mQrCJZdeuVmHYgqoX5eOy5AQMB50NWKe3bj1m4jvopDbWp9FRAQcAzcMZrsYZV+BbStVVVUHAABAUdAU8vdD3HLyKd9vML8qeLQtgMEBJwD7WBt+SVovpcF20OVwQABAedBy769VwOlxHhaEWiFon6GAwICjoJJ7dFz41qy2gB9+liAgICT4E6sZ7xl3UuePUBe9CVAQMBZ0FrTrqx82KsNkF+r2vqqNoCAgFPg3Xt/2EX+No/iUAIgIOAYuGf0gMdT/x6/LnW2L+WOgICAY6C14vDr2R2yenWv4165SgQEBBwHVRA6otuIz8N9z9cu+TMAAQEHQSW6f6B+5ysxvmMAAgLOgV6N+r6u9C60l+5jF+27AAEBJ8HQ9GadlJb8aft6tuvLj9yIAQQEnAPz0a709DuuxA/l4ioOgICAQ+Ce7Ev9IqpBbwM0ntjrKg6AgID/H/R2XkdN0BHvx8xVHGIL7bgAAQEnwXdFOA5uZVk77vPxr1KgQhE+ICDgKBhCplse6K4u3Wo1fBWK+/QHBAQcA+2qDB5sIZJbx/65bgACAs6Bcav4lq7tdH0XjeXHpoCAgKNgPfKWh76Zrj1Pf3+sB2vGHwMEBBwHXxHt2T9uU4vJrBL31ksbAAICjoF96Kx/3aiBX+fSe16T+gYEBJwFzdozvs/xJ7rxKA6rPjWetlSNPSAg4Byos3tlW95n9P0eFZ8v4GcYICDgJLiX4uJ6126duenVu72kawkQEPCrQM+2fA/TEf8cpiL1GwABAb8KjNw91lElPF/MLU/2mK9JQEDASVB1QGWhJlOui2zaj33P4gAICDgAWpv/EFMb7RVd1771Mg4ICDgG/tMBCAgICAgI+MfjB75N/h2JFOtuAAAAAElFTkSuQmCC" alt="QR for GhostGrid — What I Do"></div>
+        <div class="meta">
+          <h3>GhostGrid — What I Do</h3>
+          <p class="sub">My full services menu</p>
+          <button class="copy" data-p="https://claude.ai/code/artifact/2e48c7c1-02dc-4e18-8c13-0957ae887a2a">copy payload</button>
+          <code class="pl">https://claude.ai/code/artifact/2e48c7c1-02dc-4e18-8c13-0957ae887a2a</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="qtile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnwAAAJ8AQMAAABeI+4VAAAABlBMVEUAAAD///+l2Z/dAAAAAnRSTlP//8i138cAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAPmSURBVHic7dlBciMhDIVh3aDvf8u+gWYyoKdH26tMKvLip1wuGqQPbxB0EvnDLQABAQEBAQH/Bwy166uf99dn9dfj3/5X2N/v6n91ItagpwMCAk6CV23sKzt+IbGrh6cfznWkAwICzoKa2gELrG8t+lhl1xBLBwQE/BBwtf2oZlPLf6wFCAj4meC+t/9r6oQO/ccdABAQ8GPAnqotr5QVvB/vGnm8mPdCgICAc6Dald/5WDogIOAg6C2sAnSVqOIQVS4eAQ4AAgIOgl4Z/DR/3f5vYo77ACAg4BiolO5f5zt42uOVPVI/Rt+AgICD4Jpt52QdzGq9ur2De7UBBAT8fTBib/ydIvyRqBh9sm4IfYEHBAScBKNu4xE9Iirq3PePlvBIQEDASVApb/u5q0QXiujrwRqpygAICDgK2gaXs/d+HeIRR03QSPj14AIEBBwFJWh8z/ajpRzFIepicBQHQEDAIbBnvQ7Y6/Zq+9GCU+0sDoCAgANgdCno2Yg+7sPWzTr6r+7rERAQcBDM86xXumqFKkOH3e3ElbYiICDgGNiDOt8f7Iu/C0glRt/zAQEB58ASlJt1M+8T3763Fj2VfVsABAScBOM85RfYKbbETrxNXokvbwGAgIC/DHakBa+nrg811ee7TvmwAEBAwDnQd/dCwq7iR8DdpUO4VQZAQMBp0Lb8kWvXgHg0z1qVBBAQcBR8bvMKezOVtpzXDb25AwICjoK99xWseLu093L21/LOSkBAwFEwbYOHacq6enx3Mvv7bgQQEHAc9GCViL3xV6jf6iN6aS0ECAj4AeDjiE+d79GXgdXxb82KAQQEnAI9xfe+38nXt9btqVqxcgEBAcfAg6o37lUlVDHavG1KrUcAAQHHQEWuLAU0ZZ89m+eruqYAAQHnwCNAp3yd73nezNX3QqFZQEDASbDqg9LVuj7UEtJ2QPYNIS5AQMBJ0I/v3u/a9SoIyrrNiS4sgICAs6By43GIl7ZXzK11TahX9dBtHxAQcBqM11O+spSy8IiuG1UTXl7AAQEBR8DsnZ5puXIiVA0i7Gd4zAUICDgMhl3L0+/kL6CQfH8fAAQEHAOrb+/Xd4+fe7+pY636PYCAgIOgt3ic9WWmCsWVrdkUICDgOOi5urp7uXBkl45HQKcAAgLOgbW1w055VQMFrDU7/q7foABAQMBpcE3tToXty7m369R8PAIQEPCjQB3lWS30fu3j9uf06H97AQICfgZYZ33oAp+9ine0upZ7XxwAAQF/EeyRu0/zxqMHO153+/CrOyAg4ByoVuOve18VIOusV6FYg5UOCAg4Bv5oAwQEBAQEBPx2+wN1FJmPEa6PyQAAAABJRU5ErkJggg==" alt="QR for Zac&#x27;s Pad"></div>
+        <div class="meta">
+          <h3>Zac&#x27;s Pad</h3>
+          <p class="sub">My link hub — new-client landing</p>
+          <button class="copy" data-p="https://claude.ai/code/artifact/0356aace-3329-46a4-a0f9-78e59d774448">copy payload</button>
+          <code class="pl">https://claude.ai/code/artifact/0356aace-3329-46a4-a0f9-78e59d774448</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="qtile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYwAAAGMAQMAAADz9wcJAAAABlBMVEUAAAD///+l2Z/dAAAAAnRSTlP//8i138cAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAGgSURBVHic7dhLjoQwDEVR74D97zI7SLfwJ4+oBh3TgxrcCCE+PoyenASbx8MgEAjk24jVuOYc95NrPdwLIJAGuTJw94WX/Vqv8UMKIJAOWW+rXsq0AAJ5S0p5PsdeAIG8JJ7JiOXd/SCQfyGRwySW82xlVQogkHNSo7rfdkgBBNIgj1GLt+p+11YBgbTI/cpyzRZn6YpiIZBj4vGrlZs3uSyN70QNBNIis/abOZnOIWrvgRDIMXnEMuv3fOZnIZAOMdkgSKOLs61F3YolBHJCIpN+f8UX9od5QCANYrk88/hpfXXCz90SAvkbqVcztwmV1dUVrXogBHJM7DmNVveLXjdM2yAE0iHb3nNGMq0WcvkEAumTmc3NJIT1HemBEEib+Ks468WQlgiBdIn2t0igye+OzCQE0iM6THcEo9pdPPQSCOSUWI1rZXIOuV2ZhEBa5FqZfCRQ51ar3SgE0iEaP59SvUATmxwCeUtM/nVEXof+D4FAXpFI4wrhPtVCID3ioy7W9ZAeGKs4COSc1NAc2odX/jEI5JQcDggEAvkq8gMf9xQ3qO0JWgAAAABJRU5ErkJggg==" alt="QR for Biscuit — Shop Demo"></div>
+        <div class="meta">
+          <h3>Biscuit — Shop Demo</h3>
+          <p class="sub">Live demo page</p>
+          <button class="copy" data-p="https://biscuitshop.us">copy payload</button>
+          <code class="pl">https://biscuitshop.us</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Share-text <span>scan → pre-filled message</span></h2>
+    <p class="hint">Opens their texting app with the words already written — they hit send.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="qtile"><img src="data:image/png;base64,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" alt="QR for New-client invite"></div>
+        <div class="meta">
+          <h3>New-client invite</h3>
+          <p class="sub">Warm intro → opens my Pad (share to anyone)</p>
+          <button class="copy" data-p="SMSTO::This is GhostGrid — homelab, hardware &amp; security help, done local and private. Here&#x27;s my pad, everything I do in one tap: https://claude.ai/code/artifact/0356aace-3329-46a4-a0f9-78e59d774448">copy payload</button>
+          <code class="pl">SMSTO::This is GhostGrid — homelab, hardware &amp; security help, done local and private. Here&#x27;s my pad, everything I do in one tap: https://claude.ai/code/artifact/0356aace-3329-46a4-a0f9-78e59d774448</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="qtile"><img src="data:image/png;base64,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" alt="QR for Text my services"></div>
+        <div class="meta">
+          <h3>Text my services</h3>
+          <p class="sub">Pre-fills a text with my offerings link</p>
+          <button class="copy" data-p="SMSTO::Here&#x27;s what I do — IT, private remote help, network &amp; phone security, Linux reflashes, OSINT. https://claude.ai/code/artifact/2e48c7c1-02dc-4e18-8c13-0957ae887a2a">copy payload</button>
+          <code class="pl">SMSTO::Here&#x27;s what I do — IT, private remote help, network &amp; phone security, Linux reflashes, OSINT. https://claude.ai/code/artifact/2e48c7c1-02dc-4e18-8c13-0957ae887a2a</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="qtile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhwAAAIcAQMAAACHMOU/AAAABlBMVEUAAAD///+l2Z/dAAAAAnRSTlP//8i138cAAAAJcEhZcwAACxIAAAsSAdLdfvwAAALISURBVHic7dlBbuswDEVR7kD736V3oJ+G5COldBCgf8YrBIYrk8ejB0mu7f8wDAQEBAQE5HvENNbej71+fvO6/tz4eM9HzzpbQEDGIll5PH0XvC5C/D7mWwsIyGSkP3LA4yZPTlBHCwgISKxZkazW5YiWNhAQkE/kyqDaK4YgICCfGz/9LBs9hmtLuFpAQOYiGmt/+2stICBjkT7MTCmLxCmDdqdPTSAgkxGv6vs6bfxq3mt8Zu8sAAGZimSj5lUc4+ktW07WgIAMRbQY/cyudr0Wsu4cZygQkLlIrFZaldKMPOZZqeKZgQUBmYxEjnT10c5NcvZjcjQPAjIW+aXgPZSyLM57q9UNBGQ00r4zfK5WavnpzxfpCgIyGTmEsyv8fnpyp1MgIFMRb7G+VL2HHgWeZYXsc+MHAjINyVFdu5an+5qbQDNRICBTkbbB8/nIY15dMKs3hmbHyQsEZCByVfaseZdWMcvtn94IAjIW2W1Tl5mqtal6FdKdL9218QMBGYvE5LUwXc716COAICCjkJ41H1GsTxBKqJnmdQ8CMhdpaYrKp9VrZh2scBCQsUi1ry3TcqdXSTw3fsogCMhcZLe9X9/pnWPrK4Tlqx8QkNGI9bXJi587dz7p7WanBgIyG6n5E6xgavF6at4+Tl4gIIOQ1WqsRTIXKdUHmJP5JwjIXMRWo1adiXoSoyHn/V09gCAg05DDqUfHhwiFMdJnBgICEn9aLmT558WalrCsBAEZjsR9Ox95mT/StfB8Ra5oICBDkT6O+p611R5lKvO9ICBDkZ4pLUnHVdvCx/rMnWIQkGnIyvStipWrPX12BRAEBKQHLZOoMmfrU8NnDQgIyMqjkz7TWfbaEdX96z+JQECGI+0+NM9aDr9XJQjIZCSClAEsp2UtJvORcgoCMhfRaItXgV1YGb1auUBA5iJ/HiAgICAgIF+Of8ykIXAiAuJvAAAAAElFTkSuQmCC" alt="QR for Text my site"></div>
+        <div class="meta">
+          <h3>Text my site</h3>
+          <p class="sub">Pre-fills &#x27;Check out my work&#x27; + site</p>
+          <button class="copy" data-p="SMSTO::Check out my work — https://stackzac22.github.io/">copy payload</button>
+          <code class="pl">SMSTO::Check out my work — https://stackzac22.github.io/</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>GhostGrid · scan · text · done</footer>
+</div>
+<script>
+  document.addEventListener("click",function(e){
+    var b=e.target.closest(".copy"); if(!b) return;
+    navigator.clipboard.writeText(b.dataset.p||"").then(function(){
+      var t=b.textContent; b.textContent="copied"; b.classList.add("done");
+      setTimeout(function(){b.textContent=t;b.classList.remove("done");},1400);
+    });
+  });
+</script>
+</body>
+</html>
